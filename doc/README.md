@@ -1,19 +1,7 @@
-# Documentació
-Llistat d'alguns dels punts que han de quedar explicats en aquesta carpeta. Poden ser tots en aquest fitxer o en diversos fitxers enllaçats.
-
-És obligatori modificar aquest document!!
-
-## Documentació bàsica MÍNIMA
- * Objectius
- * Arquitectura bàsica
-   * Tecnologies utilitzades
-   * Interrelació entre els diversos components
- * Com crees l'entorn de desenvolupament
- * Com desplegues l'aplicació a producció
- * Llistat d'endpoints de l'API de backend (també podeu documentar-ho amb swagger)
-    * Rutes
-   * Exemples de JSON de peticó
-   * Exemples de JSON de resposta i els seus codis d'estat 200? 404?
- * Aplicació Android
- * Altres elements importants.
- * ...
+# Tank Stars — Artillery Duel
+- Group: GrupX
+- Student: [your name]
+- Goal: 2D turn-based multiplayer tank artillery game
+- Status: Sprint 1 — Project setup
+- Docs: (pending)
+- Deploy: (pending)
