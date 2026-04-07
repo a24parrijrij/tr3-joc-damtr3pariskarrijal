@@ -1,0 +1,74 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+         editor-extension-mode="False">
+
+    <ui:Style src="../USS/Styles.uss"/>
+
+    <ui:VisualElement name="root" class="root combat-root">
+        <ui:VisualElement class="combat-shell">
+            <ui:VisualElement class="combat-header">
+                <ui:VisualElement class="combat-panel">
+                    <ui:Label text="TANK STARS DUEL" class="title combat-title"/>
+                    <ui:Label name="room-code-label" text="Room ------" class="subtitle"/>
+                    <ui:Label name="connection-status-label" text="Connecting..." class="status-text"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="combat-panel compact-panel">
+                    <ui:Label text="Turn Status" class="combat-section-title"/>
+                    <ui:Label name="turn-label" text="Waiting for both players..." class="combat-turn-label"/>
+                    <ui:Label text="The server decides turns and damage." class="combat-note"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="battlefield-shell">
+                <ui:VisualElement class="tank-card local-card">
+                    <ui:Label name="local-player-name" text="You" class="combat-card-title"/>
+                    <ui:Label name="local-hp-label" text="100 HP" class="combat-hp-text"/>
+                    <ui:VisualElement class="hp-track">
+                        <ui:VisualElement name="local-hp-fill" class="hp-fill local-fill"/>
+                    </ui:VisualElement>
+                    <ui:Label text="Controls on this side update your next shot." class="combat-note"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="battle-center">
+                    <ui:Label text="BATTLEFIELD" class="combat-section-title"/>
+                    <ui:VisualElement class="terrain-strip">
+                        <ui:Label text="YOUR TANK" class="tank-marker left-marker"/>
+                        <ui:Label text="ENEMY" class="tank-marker right-marker"/>
+                    </ui:VisualElement>
+                    <ui:Label name="combat-log-label" text="Waiting for game_start..." class="combat-log"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="tank-card enemy-card">
+                    <ui:Label name="enemy-player-name" text="Opponent" class="combat-card-title"/>
+                    <ui:Label name="enemy-hp-label" text="100 HP" class="combat-hp-text"/>
+                    <ui:VisualElement class="hp-track">
+                        <ui:VisualElement name="enemy-hp-fill" class="hp-fill enemy-fill"/>
+                    </ui:VisualElement>
+                    <ui:Label text="Near hits deal reduced damage." class="combat-note"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="combat-controls">
+                <ui:VisualElement class="combat-panel control-panel">
+                    <ui:Label text="Angle" class="combat-section-title"/>
+                    <ui:Label name="angle-value-label" text="45°" class="slider-value"/>
+                    <ui:Slider name="angle-slider" low-value="0" high-value="90" value="45"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="combat-panel control-panel">
+                    <ui:Label text="Power" class="combat-section-title"/>
+                    <ui:Label name="power-value-label" text="75%" class="slider-value"/>
+                    <ui:Slider name="power-slider" low-value="0" high-value="100" value="75"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="combat-actions">
+                <ui:Button name="fire-btn" class="btn-primary combat-fire-btn" text="FIRE SHOT"/>
+                <ui:Button name="leave-btn" class="btn-secondary combat-leave-btn" text="RETURN TO MENU"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+</ui:UXML>

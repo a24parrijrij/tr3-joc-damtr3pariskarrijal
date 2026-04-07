@@ -10,6 +10,12 @@ public class GameManager : MonoBehaviour
     public int gameId;
     public string roomCode;
 
+    public void ResetMatchState()
+    {
+        gameId = 0;
+        roomCode = string.Empty;
+    }
+
     public static GameManager EnsureInstance()
     {
         if (Instance != null)

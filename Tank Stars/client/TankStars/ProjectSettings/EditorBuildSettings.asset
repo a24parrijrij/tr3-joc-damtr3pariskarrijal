@@ -15,6 +15,9 @@ EditorBuildSettings:
     path: Assets/Scenes/WaitingScene.unity
     guid: 05d7112f711cd4e16b21bf1c95aead03
   - enabled: 1
+    path: Assets/Scenes/CombatScene.unity
+    guid: 6cb4f334337a4ee7b92936449b6d1234
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:

@@ -5,26 +5,27 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    padding-left: 24px;
-    padding-right: 24px;
-    padding-top: 24px;
-    padding-bottom: 24px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
     background-color: rgb(15, 20, 35);
+    overflow: hidden;
 }
 
 /* ===== TITLE ===== */
 .title {
-    font-size: 34px;
+    font-size: 26px;
     color: rgb(255, 200, 50);
     -unity-font-style: bold;
-    margin-bottom: 24px;
+    margin-bottom: 14px;
     -unity-text-align: middle-center;
 }
 
 .subtitle {
-    font-size: 18px;
+    font-size: 15px;
     color: rgb(180, 180, 200);
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     -unity-text-align: middle-center;
 }
 
@@ -32,27 +33,28 @@
 .card {
     background-color: rgb(25, 32, 55);
     border-radius: 16px;
-    padding: 24px;
-    width: 100%;
-    max-width: 420px;
+    padding: 16px;
+    width: 88%;
+    max-width: 360px;
     border-width: 1px;
     border-color: rgb(60, 80, 140);
     align-items: stretch;
+    max-height: 96%;
 }
 
 /* ===== INPUT FIELDS ===== */
 .input-field {
     width: 100%;
     max-width: 100%;
-    height: 48px;
+    height: 38px;
     background-color: rgb(35, 45, 70);
     border-radius: 8px;
     border-width: 1px;
     border-color: rgb(80, 100, 160);
     color: rgb(220, 220, 240);
-    font-size: 18px;
+    font-size: 15px;
     padding-left: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .input-field:focus {
@@ -61,8 +63,8 @@
 
 .input-label {
     color: rgb(150, 160, 200);
-    font-size: 14px;
-    margin-bottom: 6px;
+    font-size: 12px;
+    margin-bottom: 4px;
     align-self: flex-start;
     margin-left: 0;
 }
@@ -70,14 +72,14 @@
 /* ===== BUTTONS ===== */
 .btn-primary {
     width: 100%;
-    height: 52px;
+    height: 40px;
     background-color: rgb(50, 100, 220);
     border-radius: 10px;
     border-width: 0;
     color: rgb(255, 255, 255);
-    font-size: 18px;
+    font-size: 14px;
     -unity-font-style: bold;
-    margin-top: 10px;
+    margin-top: 8px;
     transition-duration: 0.1s;
 }
 
@@ -91,14 +93,14 @@
 
 .btn-secondary {
     width: 100%;
-    height: 52px;
+    height: 40px;
     background-color: rgb(40, 50, 80);
     border-radius: 10px;
     border-width: 1px;
     border-color: rgb(80, 100, 160);
     color: rgb(180, 190, 220);
-    font-size: 18px;
-    margin-top: 10px;
+    font-size: 14px;
+    margin-top: 8px;
 }
 
 .btn-secondary:hover {
@@ -107,82 +109,82 @@
 
 .btn-danger {
     width: 100%;
-    height: 52px;
+    height: 40px;
     background-color: rgb(160, 40, 40);
     border-radius: 10px;
     border-width: 0;
     color: white;
-    font-size: 18px;
-    margin-top: 10px;
+    font-size: 14px;
+    margin-top: 8px;
 }
 
 /* ===== TEXT ===== */
 .error-text {
     color: rgb(255, 80, 80);
-    font-size: 14px;
-    margin-top: 8px;
+    font-size: 12px;
+    margin-top: 6px;
     -unity-text-align: middle-center;
 }
 
 .success-text {
     color: rgb(80, 220, 120);
-    font-size: 14px;
-    margin-top: 8px;
+    font-size: 12px;
+    margin-top: 6px;
     -unity-text-align: middle-center;
 }
 
 .room-code {
-    font-size: 40px;
+    font-size: 28px;
     color: rgb(255, 200, 50);
     -unity-font-style: bold;
-    letter-spacing: 8px;
+    letter-spacing: 4px;
     -unity-text-align: middle-center;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 .status-text {
-    font-size: 18px;
+    font-size: 14px;
     color: rgb(150, 200, 255);
     -unity-text-align: middle-center;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .divider {
     width: 100%;
     height: 1px;
     background-color: rgb(60, 70, 100);
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-top: 12px;
+    margin-bottom: 12px;
 }
 
 .join-row {
     flex-direction: row;
     align-items: center;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 6px;
 }
 
 .join-input {
     flex-grow: 1;
-    height: 48px;
+    height: 38px;
     background-color: rgb(35, 45, 70);
     border-radius: 8px 0 0 8px;
     border-width: 1px;
     border-color: rgb(80, 100, 160);
     color: rgb(220, 220, 240);
-    font-size: 18px;
+    font-size: 15px;
     padding-left: 12px;
 }
 
 .join-btn {
-    width: 100px;
-    height: 48px;
+    width: 80px;
+    height: 38px;
     background-color: rgb(50, 100, 220);
     border-radius: 0 8px 8px 0;
     border-width: 0;
     color: white;
-    font-size: 16px;
+    font-size: 13px;
     -unity-font-style: bold;
 }
 
@@ -208,4 +210,204 @@
 
 .hidden {
     display: none;
+}
+
+.combat-root {
+    justify-content: flex-start;
+    background-color: rgb(9, 13, 24);
+}
+
+.combat-shell {
+    width: 100%;
+    max-width: 980px;
+    flex-grow: 1;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.combat-header {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.combat-panel {
+    flex-grow: 1;
+    background-color: rgb(20, 29, 50);
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: rgb(60, 85, 140);
+    padding: 12px;
+}
+
+.compact-panel {
+    max-width: 240px;
+}
+
+.combat-title {
+    margin-bottom: 4px;
+    font-size: 22px;
+}
+
+.combat-section-title {
+    color: rgb(255, 214, 96);
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.combat-turn-label {
+    color: rgb(230, 236, 255);
+    font-size: 17px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.combat-note {
+    color: rgb(150, 167, 206);
+    font-size: 11px;
+}
+
+.battlefield-shell {
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.tank-card {
+    width: 21%;
+    background-color: rgb(24, 35, 59);
+    border-radius: 14px;
+    border-width: 1px;
+    padding: 12px;
+}
+
+.local-card {
+    border-color: rgb(67, 152, 255);
+}
+
+.enemy-card {
+    border-color: rgb(255, 134, 92);
+}
+
+.combat-card-title {
+    color: rgb(239, 243, 255);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.combat-hp-text {
+    color: rgb(168, 218, 255);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.hp-track {
+    width: 100%;
+    height: 14px;
+    background-color: rgb(42, 52, 78);
+    border-radius: 7px;
+    margin-bottom: 10px;
+}
+
+.hp-fill {
+    height: 100%;
+    border-radius: 7px;
+}
+
+.local-fill {
+    background-color: rgb(62, 180, 255);
+}
+
+.enemy-fill {
+    background-color: rgb(255, 117, 87);
+}
+
+.battle-center {
+    flex-grow: 1;
+    min-height: 170px;
+    background-color: rgb(15, 22, 40);
+    border-radius: 16px;
+    border-width: 1px;
+    border-color: rgb(50, 70, 118);
+    padding: 12px;
+    justify-content: space-between;
+}
+
+.terrain-strip {
+    height: 78px;
+    margin-top: 8px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    background-color: rgb(54, 74, 54);
+    justify-content: flex-end;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 8px;
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.tank-marker {
+    color: rgb(255, 255, 255);
+    background-color: rgb(31, 41, 67);
+    border-radius: 999px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-size: 10px;
+    -unity-font-style: bold;
+}
+
+.left-marker {
+    margin-right: auto;
+}
+
+.right-marker {
+    margin-left: auto;
+}
+
+.combat-log {
+    min-height: 42px;
+    color: rgb(219, 228, 255);
+    font-size: 13px;
+    white-space: normal;
+}
+
+.combat-controls {
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.control-panel {
+    min-height: 96px;
+    width: 49%;
+}
+
+.slider-value {
+    color: rgb(110, 197, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+
+.combat-actions {
+    flex-direction: row;
+    gap: 10px;
+}
+
+.combat-fire-btn {
+    flex-grow: 1;
+    margin-top: 0;
+    height: 42px;
+}
+
+.combat-leave-btn {
+    flex-grow: 1;
+    margin-top: 0;
+    height: 42px;
 }

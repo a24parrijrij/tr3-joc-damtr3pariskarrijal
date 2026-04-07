@@ -107,6 +107,7 @@ public class WaitingManager : MonoBehaviour
     void OnBackClick()
     {
         StopAllCoroutines();
+        GameManager.EnsureInstance().ResetMatchState();
         SceneManager.LoadScene("MenuScene");
     }
 }
