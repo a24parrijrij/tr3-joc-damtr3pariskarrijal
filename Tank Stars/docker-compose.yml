@@ -47,3 +47,18 @@ services:
     depends_on:
       - api
       - game
+
+  # ── ML-Agents Trainer (teacher's guide workflow) ─────────────────────────
+  # Runs the Python PPO trainer. Unity Editor connects to it on port 5004.
+  # Usage: docker compose run --rm --service-ports trainer \
+  #          mlagents-learn /workspace/simple.yaml --run-id=tankAgent1
+  trainer:
+    build: ./ml-agents
+    container_name: ml_trainer
+    ports:
+      - "5004:5004"   # Unity Editor communicates with trainer on this port
+    volumes:
+      - ./ml-agents/simple.yaml:/workspace/simple.yaml
+      - ./ml-agents/results:/workspace/results
+    stdin_open: true
+    tty: true

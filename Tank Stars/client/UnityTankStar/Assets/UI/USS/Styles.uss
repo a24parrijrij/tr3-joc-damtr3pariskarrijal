@@ -1,0 +1,725 @@
+/* ===== BASE ===== */
+.root {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background-color: rgb(15, 20, 35);
+    overflow: hidden;
+}
+
+/* ===== TITLE ===== */
+.title {
+    font-size: 26px;
+    color: rgb(255, 200, 50);
+    -unity-font-style: bold;
+    margin-bottom: 14px;
+    -unity-text-align: middle-center;
+}
+
+.subtitle {
+    font-size: 15px;
+    color: rgb(180, 180, 200);
+    margin-bottom: 14px;
+    -unity-text-align: middle-center;
+}
+
+/* ===== CARD / PANEL ===== */
+.card {
+    background-color: rgb(25, 32, 55);
+    border-radius: 16px;
+    padding: 16px;
+    width: 88%;
+    max-width: 360px;
+    border-width: 1px;
+    border-color: rgb(60, 80, 140);
+    align-items: stretch;
+    max-height: 96%;
+}
+
+/* ===== INPUT FIELDS ===== */
+.input-field {
+    width: 100%;
+    max-width: 100%;
+    height: 38px;
+    background-color: rgb(35, 45, 70);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgb(80, 100, 160);
+    color: rgb(220, 220, 240);
+    font-size: 15px;
+    padding-left: 12px;
+    margin-bottom: 10px;
+}
+
+.input-field:focus {
+    border-color: rgb(100, 150, 255);
+}
+
+.input-label {
+    color: rgb(150, 160, 200);
+    font-size: 12px;
+    margin-bottom: 4px;
+    align-self: flex-start;
+    margin-left: 0;
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary {
+    width: 100%;
+    height: 40px;
+    background-color: rgb(50, 100, 220);
+    border-radius: 10px;
+    border-width: 0;
+    color: rgb(255, 255, 255);
+    font-size: 14px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+    transition-duration: 0.1s;
+}
+
+.btn-primary:hover {
+    background-color: rgb(70, 120, 255);
+}
+
+.btn-primary:active {
+    background-color: rgb(30, 80, 180);
+}
+
+.btn-secondary {
+    width: 100%;
+    height: 40px;
+    background-color: rgb(40, 50, 80);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(80, 100, 160);
+    color: rgb(180, 190, 220);
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+.btn-secondary:hover {
+    background-color: rgb(55, 70, 110);
+}
+
+.btn-danger {
+    width: 100%;
+    height: 40px;
+    background-color: rgb(160, 40, 40);
+    border-radius: 10px;
+    border-width: 0;
+    color: white;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+/* ===== TEXT ===== */
+.error-text {
+    color: rgb(255, 80, 80);
+    font-size: 12px;
+    margin-top: 6px;
+    -unity-text-align: middle-center;
+}
+
+.success-text {
+    color: rgb(80, 220, 120);
+    font-size: 12px;
+    margin-top: 6px;
+    -unity-text-align: middle-center;
+}
+
+.room-code {
+    font-size: 28px;
+    color: rgb(255, 200, 50);
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    -unity-text-align: middle-center;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.status-text {
+    font-size: 14px;
+    color: rgb(150, 200, 255);
+    -unity-text-align: middle-center;
+    margin-top: 10px;
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background-color: rgb(60, 70, 100);
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.join-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    margin-top: 6px;
+}
+
+.join-input {
+    flex-grow: 1;
+    height: 38px;
+    background-color: rgb(35, 45, 70);
+    border-radius: 8px 0 0 8px;
+    border-width: 1px;
+    border-color: rgb(80, 100, 160);
+    color: rgb(220, 220, 240);
+    font-size: 15px;
+    padding-left: 12px;
+}
+
+.join-btn {
+    width: 80px;
+    height: 38px;
+    background-color: rgb(50, 100, 220);
+    border-radius: 0 8px 8px 0;
+    border-width: 0;
+    color: white;
+    font-size: 13px;
+    -unity-font-style: bold;
+}
+
+.join-btn:hover {
+    background-color: rgb(70, 120, 255);
+}
+
+.map-picker {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+
+.map-select-btn {
+    width: 18%;
+    min-width: 44px;
+    height: 36px;
+    background-color: rgb(44, 60, 108);
+    border-radius: 8px;
+    border-width: 0;
+    color: rgb(255, 255, 255);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.map-pill {
+    flex-grow: 1;
+    height: 36px;
+    background-color: rgb(35, 45, 70);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgb(80, 100, 160);
+    color: rgb(240, 218, 120);
+    font-size: 14px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    padding-top: 9px;
+}
+
+.helper-text {
+    color: rgb(150, 167, 206);
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    border-width: 4px;
+    border-color: rgb(100, 150, 255);
+    border-top-color: rgb(255, 255, 255);
+    margin-top: 20px;
+}
+
+.screen {
+    width: 100%;
+    height: 100%;
+    align-items: center;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ===== COMBAT ROOT ===== */
+.combat-root {
+    padding: 0;
+    background-color: rgb(15, 20, 36);
+    overflow: hidden;
+}
+
+/* ── Game world layer (background + terrain + tanks) ── */
+.game-world {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.world-background {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-and-crop;
+    background-image: resource("Images/backgrounds/bg_desert");
+}
+
+.world-terrain {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 28%;
+    background-color: rgb(169, 132, 58);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+/* ── Tank containers ── */
+.tank {
+    position: absolute;
+    bottom: 26%;
+    width: 120px;
+    height: 80px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.tank-left  { left: 12%; }
+.tank-right { right: 12%; }
+
+/* Tank body (the main rectangle) */
+.tank-body {
+    position: absolute;
+    bottom: 0;
+    width: 100px;
+    height: 52px;
+    border-radius: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.tank-body-blue {
+    background-image: resource("Images/tanks/tank_blue_body");
+}
+
+.tank-body-red {
+    background-image: resource("Images/tanks/tank_red_body");
+}
+
+/* Barrel pivot sits at the top-center of the body */
+.barrel-pivot {
+    position: absolute;
+    bottom: 38px;
+    left: 44px;
+    width: 80px;
+    height: 20px;
+    transform-origin: left center;
+    rotate: 30deg;
+}
+
+.barrel-pivot-flipped {
+    left: auto;
+    right: 44px;
+    transform-origin: right center;
+    rotate: -30deg;
+    scale: -1 1;
+}
+
+/* The actual barrel image */
+.barrel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80px;
+    height: 20px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.barrel-blue {
+    background-image: resource("Images/tanks/tank_blue_barrel");
+}
+
+.barrel-red {
+    background-image: resource("Images/tanks/tank_red_barrel");
+}
+
+/* Projectile */
+.projectile {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background-color: rgb(255, 200, 50);
+}
+
+/* Explosion */
+.explosion {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ── HUD overlay (transparent, on top of game world) ── */
+.hud-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+/* ===== FLOATING HP ABOVE TANKS ===== */
+.hp-anchor {
+    position: absolute;
+    width: 140px;
+    align-items: center;
+    justify-content: center;
+    display: none;
+}
+
+.tank-hp-float {
+    width: 100%;
+    align-items: center;
+    background-color: rgba(8, 12, 24, 0.75);
+    border-radius: 12px;
+    padding: 6px 10px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tank-hp-name {
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-bottom: 2px;
+}
+
+.local-hp-name {
+    color: rgb(100, 200, 255);
+}
+
+.enemy-hp-name {
+    color: rgb(255, 140, 100);
+}
+
+.tank-hp-track {
+    width: 80%;
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+.tank-hp-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition-duration: 0.4s;
+}
+
+.local-fill {
+    background-color: rgb(62, 200, 255);
+}
+
+.enemy-fill {
+    background-color: rgb(255, 100, 70);
+}
+
+/* ===== DAMAGE POPUP ===== */
+.damage-popup {
+    position: absolute;
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: rgb(255, 60, 60);
+    -unity-text-align: middle-center;
+    display: none;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.7);
+}
+
+/* ===== TURN BANNER ===== */
+.turn-banner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 38%;
+    height: 64px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.65);
+    z-index: 10;
+}
+
+.turn-banner-text {
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: rgb(255, 230, 100);
+    -unity-text-align: middle-center;
+    letter-spacing: 6px;
+}
+
+/* ===== MINI TOP BAR ===== */
+.mini-top-bar {
+    position: absolute;
+    left: 50%;
+    top: 2%;
+    translate: -50% 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    background-color: rgba(0, 0, 0, 0.45);
+    border-radius: 20px;
+    padding: 6px 20px;
+    z-index: 5;
+}
+
+.mini-top-text {
+    font-size: 11px;
+    color: rgb(160, 175, 210);
+    -unity-text-align: middle-center;
+}
+
+.mini-map-text {
+    color: rgb(255, 210, 100);
+    -unity-font-style: bold;
+}
+
+.mini-top-turn {
+    font-size: 13px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+/* ===== CORNER CONTROLS (Angle / Power) ===== */
+.corner-control {
+    position: absolute;
+    bottom: 3%;
+    width: 140px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 14px;
+    padding: 8px 12px;
+    align-items: center;
+    z-index: 5;
+}
+
+.corner-left {
+    left: 2%;
+}
+
+.corner-right {
+    right: 2%;
+}
+
+.corner-label {
+    font-size: 10px;
+    color: rgb(180, 190, 220);
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+}
+
+.corner-value {
+    font-size: 22px;
+    color: rgb(255, 220, 80);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+/* ===== BOTTOM CENTER CONTROLS ===== */
+.bottom-center-controls {
+    position: absolute;
+    bottom: 3%;
+    left: 50%;
+    translate: -50% 0;
+    align-items: center;
+    z-index: 5;
+}
+
+.move-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.move-btn {
+    width: 48px;
+    height: 48px;
+    background-color: rgba(40, 70, 160, 0.75);
+    border-radius: 24px;
+    border-width: 2px;
+    border-color: rgba(120, 180, 255, 0.4);
+    color: rgb(255, 255, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.move-btn:hover {
+    background-color: rgba(60, 100, 220, 0.9);
+}
+
+.move-btn:active {
+    background-color: rgba(30, 50, 140, 0.95);
+}
+
+/* ===== FIRE BUTTON (big circle) ===== */
+.fire-circle-btn {
+    width: 76px;
+    height: 76px;
+    border-radius: 38px;
+    background-color: rgba(210, 40, 20, 0.92);
+    border-width: 3px;
+    border-color: rgba(255, 160, 60, 0.8);
+    color: rgb(255, 240, 180);
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.fire-circle-btn:hover {
+    background-color: rgba(240, 60, 30, 0.95);
+    border-color: rgba(255, 200, 100, 0.9);
+}
+
+.fire-circle-btn:active {
+    background-color: rgba(160, 25, 15, 0.95);
+}
+
+.fire-circle-btn:disabled {
+    background-color: rgba(60, 40, 40, 0.6);
+    color: rgba(180, 160, 140, 0.4);
+    border-color: rgba(80, 60, 50, 0.3);
+}
+
+/* ===== COMBAT LOG (mini) ===== */
+.combat-log-mini {
+    font-size: 11px;
+    color: rgb(200, 210, 240);
+    -unity-text-align: middle-center;
+    margin-top: 4px;
+    max-width: 260px;
+    white-space: normal;
+}
+
+/* ===== LEAVE BUTTON ===== */
+.leave-btn-mini {
+    position: absolute;
+    top: 2%;
+    right: 2%;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgb(200, 200, 220);
+    font-size: 16px;
+    z-index: 6;
+}
+
+/* ===== GAME OVER OVERLAY ===== */
+.game-over-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.game-over-card {
+    background-color: rgb(20, 26, 48);
+    border-radius: 20px;
+    padding: 28px 32px;
+    width: 320px;
+    align-items: center;
+    border-width: 2px;
+    border-color: rgb(60, 80, 140);
+}
+
+.game-over-crown {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.game-over-title {
+    font-size: 36px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+}
+
+.game-over-title-victory {
+    color: rgb(255, 210, 60);
+}
+
+.game-over-title-defeat {
+    color: rgb(255, 80, 80);
+}
+
+.game-over-subtitle {
+    font-size: 14px;
+    color: rgb(160, 175, 210);
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+}
+
+.game-over-stats {
+    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+.stat-row {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 4px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: rgb(150, 160, 200);
+}
+
+.stat-value {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(220, 220, 240);
+}
+
+.stat-value-blue {
+    color: rgb(100, 200, 255);
+}
+
+.stat-value-red {
+    color: rgb(255, 100, 70);
+}
+
+.go-menu-btn {
+    margin-top: 12px;
+    width: 80%;
+}

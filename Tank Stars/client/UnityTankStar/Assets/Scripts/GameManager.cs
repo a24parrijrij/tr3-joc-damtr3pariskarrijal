@@ -10,7 +10,9 @@ public class GameManager : MonoBehaviour
     public int playerId;
     public string username;
 
-    // Dades de la partida
+    public enum GameMode { Multiplayer, VsAI }
+    public GameMode gameMode = GameMode.Multiplayer;
+
     public int gameId;
     public string roomCode;
     public string mapType = "desert";
@@ -20,6 +22,7 @@ public class GameManager : MonoBehaviour
     {
         gameId   = 0;
         roomCode = string.Empty;
+        gameMode = GameMode.Multiplayer;
     }
 
     // Retorna la instància existent o en crea una de nova

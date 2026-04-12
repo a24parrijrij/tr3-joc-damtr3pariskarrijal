@@ -1,0 +1,42 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1775945816",
+        "python_version": "3.10.12 (main, Aug 16 2023, 08:12:47) [GCC 12.2.0]",
+        "command_line_arguments": "/usr/local/bin/mlagents-learn /workspace/simple.yaml --run-id=tankAgent2 --force",
+        "mlagents_version": "1.1.0",
+        "mlagents_envs_version": "1.1.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.4.1",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1775945850"
+    },
+    "total": 34.62022776500089,
+    "count": 1,
+    "self": 0.035960541004897095,
+    "children": {
+        "run_training.setup": {
+            "total": 0.06957312500162516,
+            "count": 1,
+            "self": 0.06957312500162516
+        },
+        "TrainerController.start_learning": {
+            "total": 34.51469409899437,
+            "count": 1,
+            "self": 0.0004258339904481545,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 34.51361101499788,
+                    "count": 1,
+                    "self": 34.51361101499788
+                },
+                "TrainerController._save_models": {
+                    "total": 0.0006572500060428865,
+                    "count": 1,
+                    "self": 0.0006572500060428865
+                }
+            }
+        }
+    }
+}

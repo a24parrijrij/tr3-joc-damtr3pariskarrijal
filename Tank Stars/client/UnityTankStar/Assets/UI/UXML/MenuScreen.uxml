@@ -1,0 +1,50 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+         editor-extension-mode="False">
+
+    <ui:Style src="../USS/Styles.uss"/>
+
+    <ui:VisualElement name="root" class="root">
+
+        <ui:VisualElement class="card">
+
+            <ui:Label text="🎯 TANK STARS" class="title"/>
+            <ui:Label name="welcome-text" text="Welcome, Player!" class="subtitle"/>
+
+            <ui:Label text="Map Theme" class="input-label"/>
+            <ui:VisualElement class="map-picker">
+                <ui:Button name="map-prev-btn" class="map-select-btn" text="◀"/>
+                <ui:Label name="selected-map-label" text="Desert" class="map-pill"/>
+                <ui:Button name="map-next-btn" class="map-select-btn" text="▶"/>
+            </ui:VisualElement>
+            <ui:Label name="map-description-label" text="Warm dunes with rolling cover and smooth craters." class="helper-text"/>
+
+            <ui:Button name="create-btn" class="btn-primary" text="🆕  CREATE GAME"/>
+            <ui:Button name="vs-ai-btn" class="btn-secondary" text="🤖  VS AI (Offline)"/>
+
+            <ui:VisualElement class="divider"/>
+
+            <ui:Label text="— or join with a code —" class="subtitle"
+                      style="font-size:14px; margin-bottom:10px;"/>
+
+            <ui:VisualElement class="join-row">
+                <ui:TextField
+                    name="room-code-input"
+                    class="join-input"
+                    placeholder-text="Room code..."
+                    max-length="6"/>
+                <ui:Button name="join-btn" class="join-btn" text="JOIN"/>
+            </ui:VisualElement>
+
+            <ui:Label name="message-text" class="error-text" text=""/>
+
+            <ui:VisualElement class="divider"/>
+
+            <ui:Button name="quit-btn" class="btn-danger" text="QUIT"/>
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>
