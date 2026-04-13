@@ -120,6 +120,8 @@ public class ProjectSetupTool : EditorWindow
         var mgrGo = new GameObject("CombatManager");
         var uiDoc = mgrGo.AddComponent<UIDocument>();
         uiDoc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/UXML/CombatScreen.uxml");
+        var panelSettings = LoadPanelSettings();
+        if (panelSettings != null) uiDoc.panelSettings = panelSettings;
         mgrGo.AddComponent<CombatManager>();
 
         EditorSceneManager.SaveScene(scene);
@@ -198,7 +200,7 @@ public class ProjectSetupTool : EditorWindow
         uiDoc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/UI/UXML/CombatScreen.uxml");
         
         // Link Panel Settings (Required for UI Toolkit)
-        var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/UI/Styles/DefaultPanelSettings.panelSettings");
+        var panelSettings = LoadPanelSettings();
         if (panelSettings != null) uiDoc.panelSettings = panelSettings;
 
         var vsMgr = mgrGo.AddComponent<VsAIManager>();
@@ -290,6 +292,18 @@ public class ProjectSetupTool : EditorWindow
         tank.AddComponent<BoxCollider2D>().size = new Vector2(1.2f, 0.6f);
 
         return tank;
+    }
+
+    private static PanelSettings LoadPanelSettings()
+    {
+        var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>("Assets/New Panel Settings.asset");
+        if (panelSettings != null) return panelSettings;
+
+        string[] guids = AssetDatabase.FindAssets("t:PanelSettings");
+        if (guids.Length == 0) return null;
+
+        string assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+        return AssetDatabase.LoadAssetAtPath<PanelSettings>(assetPath);
     }
 
     private static void SetupTags()

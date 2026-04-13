@@ -135,7 +135,7 @@ public class VsAIManager : MonoBehaviour
         uiBound = true;
 
         // Sliders always visible; only fire/move buttons disabled until game starts
-        SetControlsEnabled(false);
+        SetControlsEnabled(true);
 
         StartCoroutine(SetupGameCoroutine());
     }

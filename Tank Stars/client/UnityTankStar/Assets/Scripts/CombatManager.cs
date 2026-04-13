@@ -1,6 +1,5 @@
-// CombatManager — UXML-driven version.
-// All visuals live in CombatScreen.uxml / Styles.uss.
-// This script only handles game logic and moves the UI elements by changing their style.
+// CombatManager — HUD-driven version.
+// CombatScreen.uxml is only the UI overlay; tanks and terrain should be scene objects.
 using System;
 using System.Collections;
 using System.Text;
@@ -156,7 +155,7 @@ public class CombatManager : MonoBehaviour
         goDuration            = root.Q<Label>("go-duration");
         goMenuBtn             = root.Q<Button>("go-menu-btn");
 
-        if (fireButton == null || angleSlider == null || localTank == null)
+        if (fireButton == null || angleSlider == null || powerSlider == null)
         {
             Debug.LogError("CombatManager: missing UI elements. Check CombatScreen.uxml.");
             enabled = false;
@@ -190,10 +189,9 @@ public class CombatManager : MonoBehaviour
         // Apply starting map
         activeMapType = NormalizeMap(gameManager.mapType);
         ApplyMap(activeMapType);
-        PlaceTanks();
 
         // Register callbacks
-        if (angleSlider != null) angleSlider.RegisterValueChangedCallback(_ => { UpdateSliderLabels(); ApplyBarrelAngle(angleSlider.value); });
+        if (angleSlider != null) angleSlider.RegisterValueChangedCallback(_ => UpdateSliderLabels());
         if (fireButton  != null) fireButton.clicked  += OnFireClicked;
         if (leaveButton != null) leaveButton.clicked += OnLeaveClicked;
         if (moveLeftButton  != null) moveLeftButton.clicked  += OnMoveLeft;
@@ -229,20 +227,6 @@ public class CombatManager : MonoBehaviour
 
     private void ApplyMap(string map)
     {
-        // Terrain colour
-        Color terrainColor;
-        if (TerrainColors.TryGetValue(map, out terrainColor))
-        {
-            var terrain = GetComponent<UIDocument>()?.rootVisualElement.Q<VisualElement>("terrain");
-            if (terrain != null) terrain.style.backgroundColor = terrainColor;
-        }
-
-        // Background image — load via Resources and assign directly
-        string path = "Images/backgrounds/bg_" + map;
-        var tex = Resources.Load<Texture2D>(path);
-        if (tex != null && background != null)
-            background.style.backgroundImage = new StyleBackground(tex);
-
         if (mapTypeLabel != null)
             mapTypeLabel.text = char.ToUpper(map[0]) + map.Substring(1);
     }
@@ -257,10 +241,6 @@ public class CombatManager : MonoBehaviour
         PlaceTank(localTank, lx, facingRight: lx <= ex);
         PlaceTank(enemyTank, ex, facingRight: ex < lx);
         ApplyBarrelAngle(angleSlider != null ? angleSlider.value : 45f);
-
-        // Position HP anchors above each tank
-        PositionHpAnchor(localHpAnchor, localTank);
-        PositionHpAnchor(enemyHpAnchor, enemyTank);
     }
 
     // xPercent is 0-100 across the screen width.
@@ -336,7 +316,8 @@ public class CombatManager : MonoBehaviour
         SetMoveEnabled(false);
 
         float landingX = PredictLandingX(localX, angle, power, isPlayer1);
-        StartProjectileArc(localTank, landingX);
+        if (localTank != null)
+            StartProjectileArc(localTank, landingX);
 
         await SendJson(new FireShotMessage { type = "fire_shot", gameId = gameManager.gameId, playerId = gameManager.playerId, angle = angle, power = power });
     }
@@ -470,7 +451,6 @@ public class CombatManager : MonoBehaviour
             case "positions_update":
                 if (msg.player1X > 0) player1X = msg.player1X;
                 if (msg.player2X > 0) player2X = msg.player2X;
-                PlaceTanks();
                 break;
 
             case "game_start":
@@ -536,7 +516,6 @@ public class CombatManager : MonoBehaviour
         if (msg.type == "game_update" && msg.lastAttackerPlayerId != 0 && msg.lastDamage > 0)
             ShowDamagePopup(msg.lastDamage, msg.lastLandingX);
 
-        PlaceTanks();
         SetFireEnabled(myTurn && !gameFinished && !shotInFlight);
         SetMoveEnabled(myTurn && !gameFinished && !shotInFlight);
         if (combatLogLabel != null) combatLogLabel.text = BuildLog(msg);
@@ -649,7 +628,9 @@ public class CombatManager : MonoBehaviour
     private void SetFireEnabled(bool on)
     {
         if (fireButton == null) return;
-        fireButton.SetEnabled(on && websocket != null && websocket.State == WebSocketState.Open && !gameFinished && !shotInFlight);
+        // Allow firing locally for testing even without WebSocket
+        bool canFire = on && !gameFinished && !shotInFlight && player1Id != 0 && IsMyTurn();
+        fireButton.SetEnabled(canFire);
     }
 
     private void SetMoveEnabled(bool on)
@@ -661,13 +642,9 @@ public class CombatManager : MonoBehaviour
 
     private bool IsMyTurn() => turnLabel != null && turnLabel.text == "Your turn";
 
-    private bool CanFire()  => !gameFinished && !shotInFlight &&
-                                websocket != null && websocket.State == WebSocketState.Open &&
-                                player1Id != 0 && IsMyTurn();
+    private bool CanFire()  => !gameFinished && !shotInFlight && player1Id != 0 && IsMyTurn();
 
-    private bool CanMove()  => !gameFinished && !shotInFlight &&
-                                websocket != null && websocket.State == WebSocketState.Open &&
-                                player1Id != 0 && IsMyTurn();
+    private bool CanMove()  => !gameFinished && !shotInFlight && player1Id != 0 && IsMyTurn();
 
     private float PredictLandingX(float attackerX, float angle, float power, bool p1)
     {

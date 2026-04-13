@@ -78,10 +78,10 @@ public class HumanTankInput : MonoBehaviour
         if (Mathf.Abs(angleDir) > 0.01f && angleSlider != null)
             angleSlider.value = Mathf.Clamp(angleSlider.value + angleDir * 45f * Time.deltaTime, 0f, 90f);
 
-        // Q/E → adjust power slider
+        // Q/E → adjust power slider (also support Shift/Ctrl)
         float powerDir = 0f;
-        if (Input.GetKey(KeyCode.E)) powerDir =  1f;
-        if (Input.GetKey(KeyCode.Q)) powerDir = -1f;
+        if (Input.GetKey(KeyCode.E) || Input.GetKey(KeyCode.RightShift) || Input.GetKey(KeyCode.Equals)) powerDir =  1f;
+        if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.Minus)) powerDir = -1f;
         if (Mathf.Abs(powerDir) > 0.01f && powerSlider != null)
             powerSlider.value = Mathf.Clamp(powerSlider.value + powerDir * 50f * Time.deltaTime, 0f, 100f);
 

@@ -4,142 +4,90 @@
          editor-extension-mode="False">
 
     <ui:Style src="../USS/Styles.uss"/>
+    <ui:Style src="../USS/CombatStyles.uss"/>
 
-    <!-- ── Root fills the whole screen ── -->
     <ui:VisualElement name="root" class="combat-root">
+        <ui:Button name="leave-btn" class="leave-btn" text="X"/>
 
-        <!-- ════════════════════════════════════════════════
-             GAME WORLD  (background + terrain + tanks)
-             Everything here is visible in the UI Builder.
-             C# moves the tanks by changing style.left / style.bottom.
-        ════════════════════════════════════════════════ -->
-        <ui:VisualElement name="game-world" class="game-world">
-
-            <!-- Background image fills the whole world layer -->
-            <ui:VisualElement name="background" class="world-background"/>
-
-            <!-- Terrain strip sits at the bottom -->
-            <ui:VisualElement name="terrain" class="world-terrain"/>
-
-            <!-- ── Blue tank (local player, left side) ── -->
-            <ui:VisualElement name="local-tank" class="tank tank-left">
-                <ui:VisualElement name="local-barrel-pivot" class="barrel-pivot">
-                    <ui:VisualElement name="local-barrel" class="barrel barrel-blue"/>
-                </ui:VisualElement>
-                <ui:VisualElement name="local-body" class="tank-body tank-body-blue"/>
-            </ui:VisualElement>
-
-            <!-- ── Red tank (enemy, right side) ── -->
-            <ui:VisualElement name="enemy-tank" class="tank tank-right">
-                <ui:VisualElement name="enemy-barrel-pivot" class="barrel-pivot barrel-pivot-flipped">
-                    <ui:VisualElement name="enemy-barrel" class="barrel barrel-red"/>
-                </ui:VisualElement>
-                <ui:VisualElement name="enemy-body" class="tank-body tank-body-red"/>
-            </ui:VisualElement>
-
-            <!-- Projectile (hidden until fired) -->
-            <ui:VisualElement name="projectile" class="projectile hidden"/>
-
-            <!-- Explosion (hidden until impact) -->
-            <ui:VisualElement name="explosion" class="explosion hidden"/>
-
+        <ui:VisualElement class="top-bar">
+            <ui:Label name="room-code-label" text="Room ------" class="mini-top-text"/>
+            <ui:Label name="map-type-label" text="Desert" class="mini-top-text mini-map-text"/>
+            <ui:Label name="turn-label" text="Waiting..." class="turn-label"/>
+            <ui:Label name="connection-status-label" text="Connecting..." class="mini-top-text"/>
         </ui:VisualElement>
 
-        <!-- ════════════════════════════════════════════════
-             HUD OVERLAY  (transparent layer on top)
-             All UI controls sit here.
-        ════════════════════════════════════════════════ -->
-        <ui:VisualElement name="hud-overlay" class="hud-overlay">
-
-            <!-- Floating HP bars (positioned by C# above each tank) -->
-            <ui:VisualElement name="local-hp-anchor" class="hp-anchor">
-                <ui:VisualElement class="tank-hp-float">
-                    <ui:Label name="local-player-name" text="You" class="tank-hp-name local-hp-name"/>
-                    <ui:VisualElement class="tank-hp-track">
-                        <ui:VisualElement name="local-hp-fill" class="tank-hp-fill local-fill"/>
-                    </ui:VisualElement>
+        <ui:VisualElement class="hp-row">
+            <ui:VisualElement class="hp-panel">
+                <ui:Label name="local-player-name" text="You" class="hp-name local-name"/>
+                <ui:VisualElement class="hp-track">
+                    <ui:VisualElement name="local-hp-fill" class="hp-fill local-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <ui:VisualElement name="enemy-hp-anchor" class="hp-anchor">
-                <ui:VisualElement class="tank-hp-float">
-                    <ui:Label name="enemy-player-name" text="Opponent" class="tank-hp-name enemy-hp-name"/>
-                    <ui:VisualElement class="tank-hp-track">
-                        <ui:VisualElement name="enemy-hp-fill" class="tank-hp-fill enemy-fill"/>
-                    </ui:VisualElement>
+            <ui:VisualElement class="hp-panel hp-panel-right">
+                <ui:Label name="enemy-player-name" text="Opponent" class="hp-name enemy-name"/>
+                <ui:VisualElement class="hp-track">
+                    <ui:VisualElement name="enemy-hp-fill" class="hp-fill enemy-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>
+        </ui:VisualElement>
 
-            <!-- Damage popup -->
-            <ui:Label name="damage-popup" text="" class="damage-popup hidden"/>
-
-            <!-- Turn banner (slides in briefly) -->
+        <ui:VisualElement class="game-area">
             <ui:VisualElement name="turn-banner" class="turn-banner hidden">
                 <ui:Label name="turn-banner-text" text="YOUR TURN" class="turn-banner-text"/>
             </ui:VisualElement>
 
-            <!-- Top info bar -->
-            <ui:VisualElement class="mini-top-bar">
-                <ui:Label name="room-code-label"         text="Room ------"   class="mini-top-text"/>
-                <ui:Label name="map-type-label"          text="Desert"         class="mini-top-text mini-map-text"/>
-                <ui:Label name="turn-label"              text="Waiting..."     class="mini-top-turn"/>
-                <ui:Label name="connection-status-label" text="Connecting..."  class="mini-top-text"/>
-            </ui:VisualElement>
+            <ui:Label name="damage-popup" text="" class="damage-popup hidden"/>
+            <ui:Label name="combat-log-label" text="" class="combat-log"/>
+        </ui:VisualElement>
 
-            <!-- Bottom-left: Angle control -->
-            <ui:VisualElement class="corner-control corner-left">
-                <ui:Label text="ANGLE" class="corner-label"/>
+        <ui:VisualElement class="bottom-bar">
+            <ui:VisualElement class="slider-group">
+                <ui:Label text="ANGLE" class="slider-label"/>
                 <ui:Label name="angle-value-label" text="45" class="corner-value"/>
                 <ui:Slider name="angle-slider" low-value="0" high-value="90" value="45"/>
             </ui:VisualElement>
 
-            <!-- Bottom-right: Power control -->
-            <ui:VisualElement class="corner-control corner-right">
-                <ui:Label text="POWER" class="corner-label"/>
+            <ui:VisualElement style="align-items:center;">
+                <ui:VisualElement class="move-row">
+                    <ui:Button name="move-left-btn" class="move-btn" text="LEFT"/>
+                    <ui:Button name="fire-btn" class="fire-btn" text="FIRE"/>
+                    <ui:Button name="move-right-btn" class="move-btn" text="RIGHT"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="slider-group">
+                <ui:Label text="POWER" class="slider-label"/>
                 <ui:Label name="power-value-label" text="75" class="corner-value"/>
                 <ui:Slider name="power-slider" low-value="0" high-value="100" value="75"/>
             </ui:VisualElement>
+        </ui:VisualElement>
 
-            <!-- Bottom-center: Move + Fire buttons -->
-            <ui:VisualElement class="bottom-center-controls">
-                <ui:VisualElement class="move-row">
-                    <ui:Button name="move-left-btn"  class="move-btn"         text="◀"/>
-                    <ui:Button name="fire-btn"        class="fire-circle-btn"  text="FIRE"/>
-                    <ui:Button name="move-right-btn" class="move-btn"         text="▶"/>
-                </ui:VisualElement>
-                <ui:Label name="combat-log-label" text="" class="combat-log-mini"/>
-            </ui:VisualElement>
-
-            <!-- Leave button (top-right corner) -->
-            <ui:Button name="leave-btn" class="leave-btn-mini" text="✕"/>
-
-            <!-- Game Over overlay (hidden until game ends) -->
+        <ui:VisualElement name="hud-overlay" class="hud-overlay">
             <ui:VisualElement name="game-over-overlay" class="game-over-overlay hidden">
                 <ui:VisualElement class="game-over-card">
                     <ui:VisualElement name="game-over-crown" class="game-over-crown"/>
-                    <ui:Label name="game-over-title"    text="VICTORY!" class="game-over-title"/>
-                    <ui:Label name="game-over-subtitle" text=""          class="game-over-subtitle"/>
+                    <ui:Label name="game-over-title" text="VICTORY!" class="game-over-title"/>
+                    <ui:Label name="game-over-subtitle" text="" class="game-over-subtitle"/>
                     <ui:VisualElement class="divider"/>
                     <ui:VisualElement class="game-over-stats">
                         <ui:VisualElement class="stat-row">
-                            <ui:Label text="Your HP"  class="stat-label"/>
+                            <ui:Label text="Your HP" class="stat-label"/>
                             <ui:Label name="go-local-hp" text="100" class="stat-value stat-value-blue"/>
                         </ui:VisualElement>
                         <ui:VisualElement class="stat-row">
                             <ui:Label text="Enemy HP" class="stat-label"/>
-                            <ui:Label name="go-enemy-hp" text="0"   class="stat-value stat-value-red"/>
+                            <ui:Label name="go-enemy-hp" text="0" class="stat-value stat-value-red"/>
                         </ui:VisualElement>
                         <ui:VisualElement class="stat-row">
                             <ui:Label text="Duration" class="stat-label"/>
-                            <ui:Label name="go-duration" text="0s"  class="stat-value"/>
+                            <ui:Label name="go-duration" text="0s" class="stat-value"/>
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:Button name="go-menu-btn" class="btn-primary go-menu-btn" text="Back to Menu"/>
                 </ui:VisualElement>
             </ui:VisualElement>
-
         </ui:VisualElement>
-
     </ui:VisualElement>
 
 </ui:UXML>
