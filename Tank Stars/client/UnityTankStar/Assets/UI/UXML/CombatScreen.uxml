@@ -6,28 +6,24 @@
     <ui:Style src="../USS/Styles.uss"/>
     <ui:Style src="../USS/CombatStyles.uss"/>
 
-    <!-- Arrel: pantalla completa transparent sobre el món 3D -->
-    <ui:VisualElement name="root" class="combat-root" picking-mode="Ignore">
-
-        <!-- Botó sortir (X) -->
+    <ui:VisualElement name="root" class="combat-root">
         <ui:Button name="leave-btn" class="leave-btn" text="X"/>
 
-        <!-- Barra superior -->
-        <ui:VisualElement class="top-bar" picking-mode="Ignore">
-            <ui:Label name="room-code-label" text="Sala ------" class="mini-top-text"/>
+        <ui:VisualElement class="top-bar">
+            <ui:Label name="room-code-label" text="Room ------" class="mini-top-text"/>
             <ui:Label name="map-type-label" text="Desert" class="mini-top-text mini-map-text"/>
             <ui:Label name="turn-label" text="Esperant..." class="turn-label"/>
             <ui:Label name="connection-status-label" text="Connectant..." class="mini-top-text"/>
         </ui:VisualElement>
 
-        <!-- Barres de vida -->
-        <ui:VisualElement class="hp-row" picking-mode="Ignore">
+        <ui:VisualElement class="hp-row">
             <ui:VisualElement class="hp-panel">
                 <ui:Label name="local-player-name" text="Tu" class="hp-name local-name"/>
                 <ui:VisualElement class="hp-track">
                     <ui:VisualElement name="local-hp-fill" class="hp-fill local-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>
+
             <ui:VisualElement class="hp-panel hp-panel-right">
                 <ui:Label name="enemy-player-name" text="Oponent" class="hp-name enemy-name"/>
                 <ui:VisualElement class="hp-track">
@@ -36,16 +32,15 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Zona de joc transparent — no captura clics -->
-        <ui:VisualElement class="game-area" picking-mode="Ignore">
-            <ui:VisualElement name="turn-banner" class="turn-banner hidden" picking-mode="Ignore">
+        <ui:VisualElement class="game-area">
+            <ui:VisualElement name="turn-banner" class="turn-banner hidden">
                 <ui:Label name="turn-banner-text" text="EL TEU TORN" class="turn-banner-text"/>
             </ui:VisualElement>
+
             <ui:Label name="damage-popup" text="" class="damage-popup hidden"/>
             <ui:Label name="combat-log-label" text="" class="combat-log"/>
         </ui:VisualElement>
 
-        <!-- Controls inferiors -->
         <ui:VisualElement class="bottom-bar">
             <ui:VisualElement class="slider-group">
                 <ui:Label text="ANGLE" class="slider-label"/>
@@ -68,31 +63,31 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Overlay fi de partida — directament fill de root, no dins hud-overlay -->
-        <ui:VisualElement name="game-over-overlay" class="game-over-overlay hidden" picking-mode="Ignore">
-            <ui:VisualElement class="game-over-card">
-                <ui:VisualElement name="game-over-crown" class="game-over-crown"/>
-                <ui:Label name="game-over-title" text="VICTÒRIA!" class="game-over-title"/>
-                <ui:Label name="game-over-subtitle" text="" class="game-over-subtitle"/>
-                <ui:VisualElement class="divider"/>
-                <ui:VisualElement class="game-over-stats">
-                    <ui:VisualElement class="stat-row">
-                        <ui:Label text="Els teus HP" class="stat-label"/>
-                        <ui:Label name="go-local-hp" text="100" class="stat-value stat-value-blue"/>
+        <ui:VisualElement name="hud-overlay" class="hud-overlay">
+            <ui:VisualElement name="game-over-overlay" class="game-over-overlay hidden">
+                <ui:VisualElement class="game-over-card">
+                    <ui:VisualElement name="game-over-crown" class="game-over-crown"/>
+                    <ui:Label name="game-over-title" text="VICTÒRIA!" class="game-over-title"/>
+                    <ui:Label name="game-over-subtitle" text="" class="game-over-subtitle"/>
+                    <ui:VisualElement class="divider"/>
+                    <ui:VisualElement class="game-over-stats">
+                        <ui:VisualElement class="stat-row">
+                            <ui:Label text="Els teus HP" class="stat-label"/>
+                            <ui:Label name="go-local-hp" text="100" class="stat-value stat-value-blue"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="stat-row">
+                            <ui:Label text="HP enemic" class="stat-label"/>
+                            <ui:Label name="go-enemy-hp" text="0" class="stat-value stat-value-red"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="stat-row">
+                            <ui:Label text="Durada" class="stat-label"/>
+                            <ui:Label name="go-duration" text="0s" class="stat-value"/>
+                        </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:VisualElement class="stat-row">
-                        <ui:Label text="HP enemic" class="stat-label"/>
-                        <ui:Label name="go-enemy-hp" text="0" class="stat-value stat-value-red"/>
-                    </ui:VisualElement>
-                    <ui:VisualElement class="stat-row">
-                        <ui:Label text="Durada" class="stat-label"/>
-                        <ui:Label name="go-duration" text="0s" class="stat-value"/>
-                    </ui:VisualElement>
+                    <ui:Button name="go-menu-btn" class="btn-primary go-menu-btn" text="Tornar al menú"/>
                 </ui:VisualElement>
-                <ui:Button name="go-menu-btn" class="btn-primary go-menu-btn" text="Tornar al menú"/>
             </ui:VisualElement>
         </ui:VisualElement>
-
     </ui:VisualElement>
 
-</ui:UXML>
+</ui
