@@ -49,6 +49,10 @@ public class AuthManager : MonoBehaviour
 
         loginBtn.clicked += OnLoginClicked;
         registerBtn.clicked += OnRegisterClicked;
+
+        // Fons de pantalla
+        var bgTex = Resources.Load<Texture2D>("Images/backgrounds/bg_desert");
+        if (bgTex != null) root.style.backgroundImage = new StyleBackground(bgTex);
     }
 
     void OnDisable()

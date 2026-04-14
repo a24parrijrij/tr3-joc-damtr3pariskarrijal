@@ -45,6 +45,8 @@ public class VsAIManager : MonoBehaviour
     private Label         localPlayerNameLabel;
     private Label         enemyPlayerNameLabel;
 
+    private GameObject backgroundObj;
+
     // ── State ──────────────────────────────────────────────────────────────
     public bool isPlayerTurn           = true;
     public bool isGameOver             = false;
@@ -161,9 +163,12 @@ public class VsAIManager : MonoBehaviour
 
         var gm   = GameManager.EnsureInstance();
         int seed = Random.Range(1, 99999);
+        string mapType = gm?.mapType ?? "desert";
+
+        SetupWorldBackground(mapType);
 
         if (terrain != null)
-            terrain.GenerateTerrain(seed, gm?.mapType ?? "desert");
+            terrain.GenerateTerrain(seed, mapType);
 
         yield return new WaitForSeconds(0.4f);
 
@@ -437,4 +442,34 @@ public class VsAIManager : MonoBehaviour
     }
 
     public bool IsPlayerTurn() => isPlayerTurn && !isGameOver && !isResolutionInProgress;
+
+    // ── Fons de pantalla ──────────────────────────────────────────────────
+
+    private void SetupWorldBackground(string mapType)
+    {
+        var tex = Resources.Load<Texture2D>("Images/backgrounds/bg_" + mapType);
+        if (tex == null) return;
+
+        if (backgroundObj == null)
+        {
+            backgroundObj = new GameObject("Background");
+            backgroundObj.AddComponent<SpriteRenderer>();
+        }
+
+        var sr = backgroundObj.GetComponent<SpriteRenderer>();
+        sr.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100);
+        sr.sortingOrder = -100;
+
+        var cam = Camera.main;
+        if (cam != null)
+        {
+            float camH = cam.orthographicSize * 2f;
+            float camW = camH * cam.aspect;
+            float sprW = tex.width / 100f;
+            float sprH = tex.height / 100f;
+            float scale = Mathf.Max(camW / sprW, camH / sprH);
+            backgroundObj.transform.localScale = new Vector3(scale, scale, 1);
+            backgroundObj.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 10);
+        }
+    }
 }

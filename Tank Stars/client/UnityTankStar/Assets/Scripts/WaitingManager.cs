@@ -9,6 +9,7 @@ public class WaitingManager : MonoBehaviour
 {
     private string apiUrl = "http://localhost/api";
 
+    private VisualElement root;
     private Label roomCodeText;
     private Label mapTypeText;
     private Label player2Status;
@@ -26,13 +27,18 @@ public class WaitingManager : MonoBehaviour
 
         var gameManager = GameManager.EnsureInstance();
 
-        var root = document.rootVisualElement;
+        root = document.rootVisualElement;
         if (root == null)
         {
             Debug.LogError("WaitingManager could not access the UIDocument rootVisualElement.");
             enabled = false;
             return;
         }
+
+        // Fons de pantalla
+        string mapName = gameManager.mapType ?? "desert";
+        var bgTex = Resources.Load<Texture2D>("Images/backgrounds/bg_" + mapName);
+        if (bgTex != null) root.style.backgroundImage = new StyleBackground(bgTex);
 
         roomCodeText  = root.Q<Label>("room-code-text");
         mapTypeText   = root.Q<Label>("map-type-text");

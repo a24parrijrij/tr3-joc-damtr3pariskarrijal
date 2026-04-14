@@ -13,6 +13,7 @@ public class MenuManager : MonoBehaviour
     private string apiUrl = "http://localhost/api";
     private static readonly string[] MapTypes = { "desert", "snow", "grassland", "canyon", "volcanic" };
 
+    private VisualElement root;
     private Label welcomeText;
     private Label selectedMapLabel;
     private Label mapDescriptionLabel;
@@ -37,7 +38,7 @@ public class MenuManager : MonoBehaviour
             return;
         }
 
-        var root = document.rootVisualElement;
+        root = document.rootVisualElement;
         if (root == null)
         {
             Debug.LogError("MenuManager could not access the UIDocument rootVisualElement.");
@@ -210,8 +211,10 @@ public class MenuManager : MonoBehaviour
         }
 
         GameResponse game = JsonUtility.FromJson<GameResponse>(findReq.downloadHandler.text);
+        Debug.Log($"[MenuManager] Sala trobada: id={game.id}, status={game.status}, map={game.map_type}");
 
         var gameManager = GameManager.EnsureInstance();
+        Debug.Log($"[MenuManager] Unint-se amb playerId={gameManager.playerId}");
         string json = "{\"playerId\":" + gameManager.playerId + "}";
         byte[] body = System.Text.Encoding.UTF8.GetBytes(json);
 
@@ -232,7 +235,20 @@ public class MenuManager : MonoBehaviour
         else
         {
             messageText.AddToClassList("error-text");
-            messageText.text = "No s'ha pogut unir. La sala pot estar plena.";
+            // Mostrar l'error real del servidor per depurar
+            string serverBody = joinReq.downloadHandler?.text ?? "";
+            Debug.LogError($"[MenuManager] Join failed: HTTP {joinReq.responseCode} — {serverBody}");
+
+            if (joinReq.responseCode == 400 && serverBody.Contains("your own"))
+                messageText.text = "No pots unir-te a la teva pròpia sala. Utilitza un altre compte.";
+            else if (joinReq.responseCode == 400 && serverBody.Contains("full"))
+                messageText.text = "La sala ja està plena.";
+            else if (joinReq.responseCode == 400 && serverBody.Contains("no longer"))
+                messageText.text = "La partida ja no accepta jugadors.";
+            else if (joinReq.responseCode == 0)
+                messageText.text = "No s'ha pogut connectar al servidor. Docker està actiu?";
+            else
+                messageText.text = $"No s'ha pogut unir (codi {joinReq.responseCode}).";
         }
     }
 
@@ -241,6 +257,10 @@ public class MenuManager : MonoBehaviour
         string selectedMap = MapTypes[selectedMapIndex];
         selectedMapLabel.text = FormatMapType(selectedMap);
         mapDescriptionLabel.text = GetMapDescription(selectedMap);
+
+        // Actualitzar fons de pantalla
+        var bgTex = Resources.Load<Texture2D>("Images/backgrounds/bg_" + selectedMap);
+        if (bgTex != null && root != null) root.style.backgroundImage = new StyleBackground(bgTex);
     }
 
     private int GetMapIndex(string mapType)

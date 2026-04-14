@@ -72,8 +72,15 @@ public class TerrainGenerator : MonoBehaviour
         for (int i = 0; i < columns; i++)
             heights[i] = Mathf.Clamp(heights[i], baseHeight + 0.3f, baseHeight + maxHeight);
 
-        BuildMesh(currentGroundColor); // Pass color to mesh
+        BuildMesh(currentGroundColor);
         BuildCollider();
+
+        // Assegurar que el material utilitza vertex colors
+        var rend = GetComponent<MeshRenderer>();
+        if (rend != null && rend.sharedMaterial != null)
+        {
+            rend.material.EnableKeyword("_VERTEX_COLORS");
+        }
     }
 
     // Fractional Brownian Motion — stacks multiple noise octaves for mountain look

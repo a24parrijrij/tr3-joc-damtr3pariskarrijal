@@ -10,6 +10,7 @@
     padding-top: 12px;
     padding-bottom: 12px;
     background-color: rgb(15, 20, 35);
+    -unity-background-scale-mode: scale-and-crop;
     overflow: hidden;
 }
 
