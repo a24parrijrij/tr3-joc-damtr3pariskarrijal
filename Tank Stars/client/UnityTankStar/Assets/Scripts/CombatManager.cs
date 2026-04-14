@@ -367,11 +367,8 @@ public class CombatManager : MonoBehaviour
             {
                 bool facingRight = shooter.transform.position.x < target.transform.position.x;
                 shooter.SetBarrelAngle(msg.lastAngle, facingRight);
-                // Only re-animate if we are NOT the attacker — the local shooter already
-                // saw the predictive animation in FireShot(). The arc coroutine also
-                // spawns the explosion at the correct world position, so no PlayExplosion needed.
-                if (!isLocalAttacker)
-                    AnimateProjectile(shooter.transform.position, msg.lastLandingX, msg.lastAngle, msg.lastPower, facingRight);
+                // Both clients animate from server data — same landing, same timing for everyone.
+                AnimateProjectile(shooter.transform.position, msg.lastLandingX, msg.lastAngle, msg.lastPower, facingRight);
             }
 
             if (combatLogLabel != null && msg.lastDamage > 0)
@@ -517,10 +514,8 @@ public class CombatManager : MonoBehaviour
         bool facingRight = LocalTank.transform.position.x < RemoteTank.transform.position.x;
         LocalTank.SetBarrelAngle(angle, facingRight);
 
-        // Animació visual predictiva del projectil
-        float landingX = PredictLandingX(LocalTank.transform.position.x, angle, power, isPlayer1);
-        AnimateProjectile(LocalTank.transform.position, landingX, angle, power, facingRight);
-
+        // No predictive animation — both clients animate from server's game_update
+        // so both screens always show the exact same landing position.
         _ = SendJson(new FireShotMessage
         {
             type = "fire_shot",
@@ -749,16 +744,6 @@ public class CombatManager : MonoBehaviour
     public bool IsCurrentTurn() => IsMyTurn();
     public bool CanFire() => IsMyTurn() && !shotInFlight;
     public bool CanMove() => IsMyTurn() && !shotInFlight;
-
-    private float PredictLandingX(float attackerWorldX, float angle, float power, bool p1)
-    {
-        float attackerPerc = terrain != null
-            ? (attackerWorldX + terrain.width / 2f) / terrain.width * 100f
-            : 50f;
-        float distance = (power / 100f) * 40f * Mathf.Sin(2f * angle * Mathf.Deg2Rad);
-        float direction = p1 ? 1f : -1f;
-        return Mathf.Clamp(attackerPerc + distance * direction, 0f, 100f);
-    }
 
     private string NormalizeMap(string m)
     {
