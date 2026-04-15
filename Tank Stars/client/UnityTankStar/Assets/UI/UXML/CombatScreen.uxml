@@ -2,22 +2,30 @@
     <Style src="project://database/Assets/UI/USS/Styles.uss?fileID=7433441132597879392&amp;guid=09fe49dad84774a4a8174b0bdf6ffc81&amp;type=3#Styles"/>
     <Style src="project://database/Assets/UI/USS/CombatStyles.uss?fileID=7433441132597879392&amp;guid=ded8361262aaf408aa73c3c438d418fe&amp;type=3#CombatStyles"/>
     <ui:VisualElement name="root" class="combat-root">
-        <ui:VisualElement class="top-bar">
-            <ui:Label name="room-code-label" text="Room ------" class="mini-top-text"/>
-            <ui:Label name="map-type-label" text="Desert" class="mini-top-text mini-map-text"/>
-            <ui:Label name="turn-label" text="Esperant..." class="turn-label"/>
-            <ui:Label name="connection-status-label" text="Connectant..." class="mini-top-text"/>
-        </ui:VisualElement>
-        <ui:VisualElement class="hp-row">
-            <ui:VisualElement class="hp-panel">
-                <ui:Label name="local-player-name" text="Tu" class="hp-name local-name"/>
-                <ui:VisualElement class="hp-track">
+        <ui:VisualElement class="hud-header" style="flex-direction: row; flex-wrap: nowrap; justify-content: space-evenly; align-self: auto; align-content: flex-start;">
+            <ui:VisualElement class="hud-card hud-card-left">
+                <ui:VisualElement class="hud-card-top">
+                    <ui:VisualElement class="hud-avatar local-avatar"/>
+                    <ui:Label name="local-player-name" text="Tu" class="hud-player-name local-name"/>
+                    <ui:Label name="local-hp-num" text="100" class="hud-hp-num local-hp-num"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="hud-hp-track">
                     <ui:VisualElement name="local-hp-fill" class="hp-fill local-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement class="hp-panel hp-panel-right">
-                <ui:Label name="enemy-player-name" text="Oponent" class="hp-name enemy-name"/>
-                <ui:VisualElement class="hp-track">
+            <ui:VisualElement class="hud-center">
+                <ui:Label name="map-type-label" text="Desert" class="hud-map-badge"/>
+                <ui:Label name="turn-label" text="Esperant..." class="turn-label"/>
+                <ui:Label name="room-code-label" text="" class="hud-room-code"/>
+                <ui:Label name="connection-status-label" text="" class="hud-hidden-label"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="hud-card hud-card-right">
+                <ui:VisualElement class="hud-card-top hud-card-top-right">
+                    <ui:Label name="enemy-hp-num" text="100" class="hud-hp-num enemy-hp-num"/>
+                    <ui:Label name="enemy-player-name" text="Oponent" class="hud-player-name enemy-name"/>
+                    <ui:VisualElement class="hud-avatar enemy-avatar"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="hud-hp-track hud-hp-track-right">
                     <ui:VisualElement name="enemy-hp-fill" class="hp-fill enemy-fill"/>
                 </ui:VisualElement>
             </ui:VisualElement>
@@ -48,8 +56,9 @@
                 <ui:Slider name="power-slider" low-value="0" high-value="100" value="75" style="height: 36px; width: 264px;"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="hud-overlay" picking-mode="Ignore" class="hud-overlay" style="top: -4px; bottom: 4px; right: 0; left: 0;">
-            <ui:Button name="leave-btn" text="X" class="leave-btn"/>
+        <ui:VisualElement name="hud-overlay" picking-mode="Ignore" class="hud-overlay">
+            <ui:Button name="leave-btn" text="✕" class="leave-btn"/>
+            <ui:Label name="turn-timer-label" picking-mode="Ignore" text="" class="turn-timer-label hidden"/>
             <ui:VisualElement name="game-over-overlay" class="game-over-overlay hidden">
                 <ui:VisualElement class="game-over-card">
                     <ui:VisualElement name="game-over-crown" class="game-over-crown"/>

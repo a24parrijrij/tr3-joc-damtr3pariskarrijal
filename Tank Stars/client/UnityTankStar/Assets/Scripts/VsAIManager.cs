@@ -26,6 +26,8 @@ public class VsAIManager : MonoBehaviour
     private Label         powerValueLabel;
     private VisualElement localHpFill;
     private VisualElement enemyHpFill;
+    private Label         localHpNum;
+    private Label         enemyHpNum;
     private Slider        angleSlider;
     private Slider        powerSlider;
     private Button        fireButton;
@@ -44,6 +46,7 @@ public class VsAIManager : MonoBehaviour
     private Label         mapTypeLabel;
     private Label         localPlayerNameLabel;
     private Label         enemyPlayerNameLabel;
+    private Label         turnTimerLabel;
 
     private GameObject backgroundObj;
 
@@ -53,6 +56,12 @@ public class VsAIManager : MonoBehaviour
     public bool isResolutionInProgress = false;
     private bool uiBound               = false;
 
+    // ── Turn timer ─────────────────────────────────────────────────────────
+    [Header("Turn Timer")]
+    public float turnTimeLimit     = 15f;
+    private float _turnTimeRemaining = 0f;
+    private bool  _timerActive       = false;
+
     void Awake() { Instance = this; }
 
     void Start() { StartCoroutine(BindUIThenSetup()); }
@@ -61,6 +70,56 @@ public class VsAIManager : MonoBehaviour
     {
         UnbindButtons();
         StopAllCoroutines();
+    }
+
+    void Update()
+    {
+        if (!_timerActive || !uiBound) return;
+
+        _turnTimeRemaining -= Time.deltaTime;
+
+        int secs = Mathf.CeilToInt(Mathf.Max(0f, _turnTimeRemaining));
+        if (turnTimerLabel != null)
+        {
+            turnTimerLabel.text = secs.ToString();
+            if (secs <= 5)
+                turnTimerLabel.AddToClassList("urgent");
+            else
+                turnTimerLabel.RemoveFromClassList("urgent");
+        }
+
+        if (_turnTimeRemaining <= 0f)
+        {
+            _timerActive = false;
+            HideTimerLabel();
+            if (combatLogLabel != null) combatLogLabel.text = "Temps esgotat! Tir automàtic!";
+            float angle = angleSlider != null ? angleSlider.value : 45f;
+            float power = powerSlider != null ? powerSlider.value : 75f;
+            PlayerFires(angle, power);
+        }
+    }
+
+    private void StartTurnTimer()
+    {
+        _turnTimeRemaining = turnTimeLimit;
+        _timerActive       = true;
+        if (turnTimerLabel != null)
+        {
+            turnTimerLabel.text = Mathf.CeilToInt(turnTimeLimit).ToString();
+            turnTimerLabel.RemoveFromClassList("urgent");
+            turnTimerLabel.RemoveFromClassList("hidden");
+        }
+    }
+
+    private void StopTurnTimer()
+    {
+        _timerActive = false;
+        HideTimerLabel();
+    }
+
+    private void HideTimerLabel()
+    {
+        if (turnTimerLabel != null) turnTimerLabel.AddToClassList("hidden");
     }
 
     // ── UI binding ─────────────────────────────────────────────────────────
@@ -81,6 +140,8 @@ public class VsAIManager : MonoBehaviour
         powerValueLabel       = root.Q<Label>("power-value-label");
         localHpFill           = root.Q<VisualElement>("local-hp-fill");
         enemyHpFill           = root.Q<VisualElement>("enemy-hp-fill");
+        localHpNum            = root.Q<Label>("local-hp-num");
+        enemyHpNum            = root.Q<Label>("enemy-hp-num");
         angleSlider           = root.Q<Slider>("angle-slider");
         powerSlider           = root.Q<Slider>("power-slider");
         fireButton            = root.Q<Button>("fire-btn");
@@ -99,6 +160,7 @@ public class VsAIManager : MonoBehaviour
         mapTypeLabel          = root.Q<Label>("map-type-label");
         localPlayerNameLabel  = root.Q<Label>("local-player-name");
         enemyPlayerNameLabel  = root.Q<Label>("enemy-player-name");
+        turnTimerLabel        = root.Q<Label>("turn-timer-label");
 
         if (angleSlider == null) Debug.LogError("VsAIManager: 'angle-slider' not found in UXML!");
         if (powerSlider == null) Debug.LogError("VsAIManager: 'power-slider' not found in UXML!");
@@ -123,6 +185,8 @@ public class VsAIManager : MonoBehaviour
 
         SetHpBar(localHpFill, 100);
         SetHpBar(enemyHpFill, 100);
+        if (localHpNum != null) localHpNum.text = "100";
+        if (enemyHpNum != null) enemyHpNum.text = "100";
         UpdateSliderLabels();
 
         if (angleSlider     != null) angleSlider.RegisterValueChangedCallback(_ => UpdateSliderLabels());
@@ -168,7 +232,18 @@ public class VsAIManager : MonoBehaviour
         SetupWorldBackground(mapType);
 
         if (terrain != null)
+        {
+            // Fit terrain width to camera so it fills the screen edge-to-edge
+            var cam = Camera.main;
+            if (cam != null)
+            {
+                terrain.width = cam.orthographicSize * 2f * cam.aspect;
+                float halfW = terrain.width / 2f - 0.5f;
+                if (playerTank != null) playerTank.worldBoundsX = halfW;
+                if (aiTank     != null) aiTank.worldBoundsX     = halfW;
+            }
             terrain.GenerateTerrain(seed, mapType);
+        }
 
         yield return new WaitForSeconds(0.4f);
 
@@ -229,6 +304,7 @@ public class VsAIManager : MonoBehaviour
     public void PlayerFires(float angle, float power)
     {
         if (!IsPlayerTurn()) return;
+        StopTurnTimer();
         isResolutionInProgress = true;
         SetControlsEnabled(false);
         if (combatLogLabel != null) combatLogLabel.text = "Tir llançat!";
@@ -257,9 +333,9 @@ public class VsAIManager : MonoBehaviour
         pc.SetImpactCallback(OnPlayerProjectileImpact);
         pc.Launch(angle, power, playerTank.transform.position.x < aiTank.transform.position.x);
 
-        // same barrel recoil as multiplayer — shifts angle a bit after firing
+        // same barrel recoil as multiplayer — shifts angle after firing
         if (angleSlider != null)
-            angleSlider.value = Mathf.Clamp(angle + UnityEngine.Random.Range(-4f, 4f), 0f, 90f);
+            angleSlider.value = Mathf.Clamp(angle + UnityEngine.Random.Range(-10f, 10f), 0f, 90f);
 
         CancelInvoke(nameof(OnProjectileResolved));
         Invoke(nameof(OnProjectileResolved), 5.0f);
@@ -271,7 +347,7 @@ public class VsAIManager : MonoBehaviour
 
         if (terrain != null)
         {
-            terrain.DestroyTerrain(impactWorld, 0.8f);
+            terrain.DestroyTerrain(impactWorld, 0.5f);
             playerTank?.PlaceOnTerrain();
             aiTank?.PlaceOnTerrain();
         }
@@ -375,6 +451,11 @@ public class VsAIManager : MonoBehaviour
         SetControlsEnabled(isPlayerTurn);
         playerTank?.StartTurn();
         if (!isPlayerTurn) aiTank?.StartTurn();
+
+        if (isPlayerTurn && !isGameOver)
+            StartTurnTimer();
+        else
+            StopTurnTimer();
     }
 
     private void ShowTurnBanner(string text)
@@ -392,8 +473,16 @@ public class VsAIManager : MonoBehaviour
     private void RefreshHpBars()
     {
         if (!uiBound) return;
-        if (playerTank != null) SetHpBar(localHpFill, playerTank.currentHp);
-        if (aiTank     != null) SetHpBar(enemyHpFill, aiTank.currentHp);
+        if (playerTank != null)
+        {
+            SetHpBar(localHpFill, playerTank.currentHp);
+            if (localHpNum != null) localHpNum.text = playerTank.currentHp.ToString();
+        }
+        if (aiTank != null)
+        {
+            SetHpBar(enemyHpFill, aiTank.currentHp);
+            if (enemyHpNum != null) enemyHpNum.text = aiTank.currentHp.ToString();
+        }
     }
 
     private void SetHpBar(VisualElement fill, int hp)
@@ -425,6 +514,7 @@ public class VsAIManager : MonoBehaviour
 
     private void ShowGameOver(string title, string subtitle)
     {
+        StopTurnTimer();
         SetControlsEnabled(false);
         if (gameOverTitle != null)
         {

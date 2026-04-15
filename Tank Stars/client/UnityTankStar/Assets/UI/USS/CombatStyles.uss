@@ -1,3 +1,4 @@
+/* ── Root ─────────────────────────────────────────────────────────────── */
 .combat-root {
     width: 100%;
     height: 100%;
@@ -5,84 +6,210 @@
     background-color: rgba(0,0,0,0);
 }
 
-.top-bar {
+/* ── Unified HUD Header ───────────────────────────────────────────────── */
+.hud-header {
+    flex-direction: row;
     align-items: center;
-    padding: 8px;
-    background-color: rgba(0,0,0,0.5);
+    padding: 10px 14px 10px;
+    min-height: 62px;
+    background-color: rgba(8, 12, 24, 0.82);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(80, 130, 210, 0.18);
 }
 
-.turn-label {
-    font-size: 18px;
-    color: rgb(255, 230, 100);
+/* ── Player cards (left and right) ───────────────────────────────────── */
+.hud-card {
+    flex: 1;
+    max-width: 260px;
+    padding: 6px 10px 7px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-width: 1px;
+}
+
+.hud-card-left {
+    border-color: rgba(70, 190, 255, 0.22);
+    margin-right: 8px;
+}
+
+.hud-card-right {
+    border-color: rgba(255, 90, 65, 0.22);
+    margin-left: 8px;
+}
+
+/* Top row: avatar · name · HP number */
+.hud-card-top {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+/* Spacing between items in the card top row (replaces 'gap' which Unity USS does not support) */
+.hud-card-top > * {
+    margin-right: 6px;
+}
+
+/* Right card top row — mirror order: HP num · name · avatar */
+.hud-card-top-right {
+    flex-direction: row-reverse;
+}
+
+/* HP number badge */
+.hud-hp-num {
+    font-size: 13px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
+    min-width: 30px;
+    margin-left: auto;
 }
 
-.hp-row {
+.hud-card-top-right .hud-hp-num {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.local-hp-num { color: rgb(70, 190, 255); }
+.enemy-hp-num { color: rgb(255, 90, 65); }
+
+/* ── Legacy side panels (kept for compatibility) ─────────────────────── */
+.hud-side {
+    flex: 1;
+    align-items: stretch;
+}
+
+.hud-side-left  { padding-right: 14px; }
+.hud-side-right { padding-left:  14px; }
+
+/* Name + avatar row */
+.hud-player-info {
     flex-direction: row;
-    justify-content: space-between;
-    padding: 6px 12px;
-    background-color: rgba(0,0,0,0.4);
+    align-items: center;
+    margin-bottom: 6px;
 }
 
-.hp-panel {
-    width: 45%;
-    align-items: flex-start;
+.hud-player-info > * {
+    margin-right: 7px;
 }
 
-.hp-panel-right {
-    align-items: flex-end;
+.hud-player-info-right {
+    flex-direction: row-reverse;
 }
 
-.hp-name {
-    font-size: 11px;
-    -unity-font-style: bold;
-}
-
-.local-name { color: rgb(100, 200, 255); }
-.enemy-name { color: rgb(255, 120, 80); }
-
-.hp-track {
-    width: 100%;
+/* Small coloured dot next to name */
+.hud-avatar {
+    width: 10px;
     height: 10px;
-    background-color: rgba(0,0,0,0.5);
     border-radius: 5px;
-    margin-top: 2px;
+    flex-shrink: 0;
 }
 
+.local-avatar { background-color: rgb(70, 190, 255); }
+.enemy-avatar { background-color: rgb(255, 90, 65); }
+
+/* Player name */
+.hud-player-name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+}
+
+/* HP track */
+.hud-hp-track {
+    width: 100%;
+    height: 14px;
+    background-color: rgba(255, 255, 255, 0.09);
+    border-radius: 7px;
+    overflow: hidden;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Enemy bar grows from the RIGHT — row-reverse pushes fill to the right edge */
+.hud-hp-track-right {
+    flex-direction: row-reverse;
+}
+
+/* HP fill (shared between tracks) */
 .hp-fill {
     height: 100%;
-    border-radius: 5px;
-    transition-duration: 0.3s;
+    border-radius: 7px;
+    transition-duration: 0.35s;
 }
 
-.local-fill { background-color: rgb(60, 200, 255); }
-.enemy-fill { background-color: rgb(255, 80, 60); }
+.local-fill { background-color: rgb(55, 195, 255); }
+.enemy-fill { background-color: rgb(255, 75, 55); }
 
-.hp-num {
-    font-size: 11px;
-    color: rgb(200, 210, 230);
-    margin-top: 2px;
+/* ── Center panel (map badge + turn label + room code) ───────────────── */
+.hud-center {
+    width: 210px;
+    align-items: center;
+    padding: 0 8px;
+    flex-shrink: 0;
 }
 
-.combat-log {
-    font-size: 12px;
-    color: rgb(220, 220, 240);
+/* Tiny gold pill badge showing the map name */
+.hud-map-badge {
+    font-size: 9px;
+    color: rgb(255, 205, 70);
+    -unity-font-style: bold;
     -unity-text-align: middle-center;
-    padding: 4px;
-    background-color: rgba(0,0,0,0.3);
+    letter-spacing: 2px;
+    background-color: rgba(255, 175, 30, 0.12);
+    border-radius: 5px;
+    padding: 2px 9px;
+    margin-bottom: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 195, 50, 0.28);
 }
 
+/* Main turn indicator */
+.turn-label {
+    font-size: 16px;
+    color: rgb(255, 232, 100);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+/* Room code — very subtle under the turn label */
+.hud-room-code {
+    font-size: 9px;
+    color: rgba(150, 165, 200, 0.40);
+    -unity-text-align: middle-center;
+    margin-top: 3px;
+}
+
+/* connection-status-label lives in DOM but is invisible */
+.hud-hidden-label {
+    display: none;
+}
+
+/* ── Name colours (reused from old classes) ──────────────────────────── */
+.local-name { color: rgb(80, 195, 255); }
+.enemy-name { color: rgb(255, 100, 75); }
+
+/* ── Game area ────────────────────────────────────────────────────────── */
 .game-area {
     flex-grow: 1;
 }
 
+/* ── Combat log strip ─────────────────────────────────────────────────── */
+.combat-log {
+    font-size: 12px;
+    color: rgb(220, 225, 245);
+    -unity-text-align: middle-center;
+    padding: 4px;
+    background-color: rgba(0,0,0,0.30);
+}
+
+/* ── Bottom control bar ───────────────────────────────────────────────── */
 .bottom-bar {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(0,0,0,0.62);
+    border-top-width: 1px;
+    border-top-color: rgba(80, 130, 210, 0.14);
 }
 
 .slider-group {
@@ -98,6 +225,7 @@
     margin-bottom: 4px;
 }
 
+/* ── Fire button ──────────────────────────────────────────────────────── */
 .fire-btn {
     width: 80px;
     height: 80px;
@@ -110,20 +238,50 @@
     -unity-font-style: bold;
 }
 
-.fire-btn:hover { background-color: rgb(230, 60, 30); }
+.fire-btn:hover    { background-color: rgb(230, 60, 30); }
 .fire-btn:disabled { background-color: rgb(60, 40, 40); color: rgb(120, 100, 100); }
 
+/* ── Leave / X button ─────────────────────────────────────────────────── */
 .leave-btn {
     position: absolute;
-    top: 2%;
-    right: 2%;
-    width: 36px;
-    height: 36px;
-    border-radius: 18px;
-    background-color: rgba(0,0,0,0.4);
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    border-radius: 17px;
+    background-color: rgba(220, 50, 30, 0.75);
     border-width: 1px;
-    border-color: rgba(255,255,255,0.2);
-    color: rgb(200, 200, 220);
+    border-color: rgba(255, 120, 90, 0.75);
+    color: rgb(255, 245, 245);
     font-size: 14px;
-    z-index: 10;
+    -unity-font-style: bold;
+}
+
+.leave-btn:hover {
+    background-color: rgba(235, 65, 40, 0.92);
+    border-color: rgba(255, 160, 120, 0.95);
+    color: white;
+}
+
+/* ── Turn timer circle ────────────────────────────────────────────────── */
+.turn-timer-label {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    translate: -50% 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+    background-color: rgba(8, 12, 24, 0.78);
+    border-width: 2px;
+    border-color: rgb(255, 210, 50);
+    color: rgb(255, 228, 80);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.turn-timer-label.urgent {
+    border-color: rgb(255, 55, 35);
+    color: rgb(255, 75, 55);
 }

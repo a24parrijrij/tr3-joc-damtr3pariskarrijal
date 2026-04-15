@@ -50,14 +50,19 @@
     width: 100%;
     max-width: 100%;
     height: 44px;
-    background-color: rgb(30, 38, 65);
+    background-color: rgb(245, 246, 250);
     border-radius: 10px;
     border-width: 1px;
     border-color: rgb(60, 80, 140);
-    color: rgb(220, 225, 255);
+    color: rgb(20, 20, 20);
     font-size: 14px;
     padding-left: 14px;
     margin-bottom: 14px;
+}
+
+.input-field > #unity-text-input {
+    background-color: rgb(245, 246, 250);
+    color: rgb(20, 20, 20);
 }
 
 .input-field:focus {
@@ -178,13 +183,18 @@
 .join-input {
     flex-grow: 1;
     height: 38px;
-    background-color: rgb(35, 45, 70);
+    background-color: rgb(245, 246, 250);
     border-radius: 8px 0 0 8px;
     border-width: 1px;
     border-color: rgb(80, 100, 160);
-    color: rgb(220, 220, 240);
+    color: rgb(20, 20, 20);
     font-size: 15px;
     padding-left: 12px;
+}
+
+.join-input > #unity-text-input {
+    background-color: rgb(245, 246, 250);
+    color: rgb(20, 20, 20);
 }
 
 .join-btn {
@@ -208,7 +218,10 @@
     justify-content: space-between;
     width: 100%;
     margin-bottom: 6px;
-    gap: 8px;
+}
+
+.map-picker > * {
+    margin-right: 8px;
 }
 
 .map-select-btn {
@@ -477,7 +490,6 @@
     align-items: center;
     justify-content: center;
     background-color: rgba(0, 0, 0, 0.65);
-    z-index: 10;
 }
 
 .turn-banner-text {
@@ -496,11 +508,13 @@
     translate: -50% 0;
     flex-direction: row;
     align-items: center;
-    gap: 16px;
     background-color: rgba(0, 0, 0, 0.45);
     border-radius: 20px;
     padding: 6px 20px;
-    z-index: 5;
+}
+
+.mini-top-bar > * {
+    margin-right: 16px;
 }
 
 .mini-top-text {
@@ -530,7 +544,6 @@
     border-radius: 14px;
     padding: 8px 12px;
     align-items: center;
-    z-index: 5;
 }
 
 .corner-left {
@@ -563,14 +576,16 @@
     left: 50%;
     translate: -50% 0;
     align-items: center;
-    z-index: 5;
 }
 
 .move-row {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+}
+
+.move-row > * {
+    margin-right: 12px;
 }
 
 .move-btn {
@@ -644,7 +659,6 @@
     border-color: rgba(255, 255, 255, 0.2);
     color: rgb(200, 200, 220);
     font-size: 16px;
-    z-index: 6;
 }
 
 /* ===== GAME OVER OVERLAY ===== */
@@ -657,7 +671,6 @@
     background-color: rgba(0, 0, 0, 0.75);
     align-items: center;
     justify-content: center;
-    z-index: 50;
 }
 
 .game-over-card {

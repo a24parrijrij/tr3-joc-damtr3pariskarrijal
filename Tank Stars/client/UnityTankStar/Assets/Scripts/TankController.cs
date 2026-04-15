@@ -65,6 +65,18 @@ public class TankController : MonoBehaviour
 
         if (Mathf.Abs(actualStep) < 0.0001f) return 0f;
 
+        // Slope check — block movement only on near-vertical cliffs (> 55°).
+        // The tank is long so it rides moderate slopes naturally; a tight threshold
+        // blocks movement on regular hills and feels broken.
+        if (terrain != null && Mathf.Abs(actualStep) > 0.01f)
+        {
+            float currentSurfaceY = transform.position.y - 0.35f;
+            float newSurfaceY     = terrain.GetHeightAtX(newX);
+            float slopeAngle      = Mathf.Abs(Mathf.Atan2(newSurfaceY - currentSurfaceY,
+                                                           Mathf.Abs(actualStep)) * Mathf.Rad2Deg);
+            if (slopeAngle > 65f) return 0f;
+        }
+
         // calculate the Y at the NEW x position before actually moving the tank
         // if we move X first and then fix Y, the collider briefly clips into steep terrain
         // and the physics engine pushes the tank sideways — this was causing the movement glitch

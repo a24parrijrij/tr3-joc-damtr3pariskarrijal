@@ -170,7 +170,7 @@ public class TankAgent : Agent
 
             if (terrain != null)
             {
-                terrain.DestroyTerrain(impactWorld, 0.8f);
+                terrain.DestroyTerrain(impactWorld, 0.5f);
                 localTank?.PlaceOnTerrain();
                 enemyTank?.PlaceOnTerrain();
             }
