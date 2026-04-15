@@ -8,11 +8,12 @@ public class ProjectileController : MonoBehaviour
     private bool  hasImpacted = false;
     private Vector2 startPos;
 
-    // Llança el projectil amb angle i potència donats
+    // launches the projectile with the given angle and power
+    // facingRight flips the horizontal direction so it works for both players
     public void Launch(float angleDeg, float power, bool facingRight)
     {
         startPos = transform.position;
-        
+
         float sign    = facingRight ? 1f : -1f;
         float radians = angleDeg * Mathf.Deg2Rad;
         float speed   = power * 0.12f;
@@ -20,13 +21,14 @@ public class ProjectileController : MonoBehaviour
         var rb = GetComponent<Rigidbody2D>();
         if (rb == null) return;
 
+        // set the velocity using cos/sin so the angle actually means something
         rb.linearVelocity = new Vector2(
             Mathf.Cos(radians) * speed * sign,
             Mathf.Sin(radians) * speed
         );
     }
 
-    // Registra el callback que s'executarà quan impacti
+    // register the callback that fires when the projectile hits something
     public void SetImpactCallback(Action<Vector2, bool> callback)
     {
         onImpact = callback;
@@ -34,6 +36,7 @@ public class ProjectileController : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D col)
     {
+        // hasImpacted prevents the callback from firing twice if there are multiple collisions
         if (hasImpacted) return;
         hasImpacted = true;
 
@@ -44,7 +47,7 @@ public class ProjectileController : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // Destrueix el projectil si surt del camp de joc
+    // destroy the projectile if it goes too far off screen
     void Update()
     {
         if (transform.position.y < startPos.y - 15f || Mathf.Abs(transform.position.x - startPos.x) > 20f)

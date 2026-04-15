@@ -21,6 +21,7 @@ public class CombatManager : MonoBehaviour
     public GameObject explosionPrefab;
     public Camera mainCamera;
 
+    // websocket url — hardcoded to localhost for now, only works on the same machine
     private const string SocketUrl = "ws://localhost/game/";
 
     // Elements UXML
@@ -265,8 +266,9 @@ public class CombatManager : MonoBehaviour
                 break;
 
             case "positions_update":
-                if (msg.player1X > 0) player1X = msg.player1X;
-                if (msg.player2X > 0) player2X = msg.player2X;
+                // using >= 0 instead of > 0 so position 0 (far left edge) is not ignored
+                if (msg.player1X >= 0) player1X = msg.player1X;
+                if (msg.player2X >= 0) player2X = msg.player2X;
                 PlaceTanksFromPercent();
                 break;
 
@@ -467,7 +469,7 @@ public class CombatManager : MonoBehaviour
     public void OnMoveLeft()
     {
         if (!CanMove()) return;
-        LocalTank.Move(-1f, 0.2f);
+        LocalTank.Move(-1f, 0.05f);
         LocalTank.PlaceOnTerrain();
         SendTankPosition();
     }
@@ -475,7 +477,7 @@ public class CombatManager : MonoBehaviour
     public void OnMoveRight()
     {
         if (!CanMove()) return;
-        LocalTank.Move(1f, 0.2f);
+        LocalTank.Move(1f, 0.05f);
         LocalTank.PlaceOnTerrain();
         SendTankPosition();
     }
@@ -514,8 +516,8 @@ public class CombatManager : MonoBehaviour
         bool facingRight = LocalTank.transform.position.x < RemoteTank.transform.position.x;
         LocalTank.SetBarrelAngle(angle, facingRight);
 
-        // No predictive animation — both clients animate from server's game_update
-        // so both screens always show the exact same landing position.
+        // we don't animate locally — both clients animate from the server's game_update
+        // this way both screens always show the exact same landing position
         _ = SendJson(new FireShotMessage
         {
             type = "fire_shot",
@@ -524,6 +526,10 @@ public class CombatManager : MonoBehaviour
             angle = Mathf.RoundToInt(angle),
             power = Mathf.RoundToInt(power)
         });
+
+        // small barrel recoil after firing — shifts the angle slider a bit for the next turn
+        if (angleSlider != null)
+            angleSlider.value = Mathf.Clamp(angle + UnityEngine.Random.Range(-4f, 4f), 0f, 90f);
     }
 
     private void OnLeaveClicked()

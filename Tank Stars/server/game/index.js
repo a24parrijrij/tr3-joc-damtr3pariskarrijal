@@ -293,7 +293,7 @@ function calculateShot(session, attackerPlayerId, angle, power) {
   session[targetKey] = Math.max(0, session[targetKey] - damage);
   session.lastShotResult = result;
   session.lastDamage = damage;
-  session.lastLandingX = Number(landingX.toFixed(2));
+  session.lastLandingX = Number(Math.max(0, Math.min(100, landingX)).toFixed(2));
   session.lastAttackerPlayerId = attackerPlayerId;
   session.lastAngle = angle;
   session.lastPower = power;

@@ -11,15 +11,16 @@ behaviors:
       num_epoch: 3
       learning_rate_schedule: linear
     network_settings:
-      normalize: false
+      normalize: true
       hidden_units: 128
       num_layers: 2
     reward_signals:
       extrinsic:
         gamma: 0.99
         strength: 1.0
-    checkpoint_interval: 50000   # save model every 50k steps (not just at end)
+    checkpoint_interval: 500000   # save model every 50k steps (not just at end)
     keep_checkpoints: 5
-    max_steps: 500000
+    max_steps: 1000000
     time_horizon: 64
+    
     summary_freq: 5000

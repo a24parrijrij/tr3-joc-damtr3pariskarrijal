@@ -199,14 +199,14 @@ public class VsAIManager : MonoBehaviour
     private void OnMoveLeft()
     {
         if (!IsPlayerTurn() || playerTank == null) return;
-        playerTank.Move(-1f, 0.2f);
+        playerTank.Move(-1f, 0.05f);
         playerTank.PlaceOnTerrain();
     }
 
     private void OnMoveRight()
     {
         if (!IsPlayerTurn() || playerTank == null) return;
-        playerTank.Move(1f, 0.2f);
+        playerTank.Move(1f, 0.05f);
         playerTank.PlaceOnTerrain();
     }
 
@@ -256,6 +256,10 @@ public class VsAIManager : MonoBehaviour
         if (pc == null) { Destroy(proj); return; }
         pc.SetImpactCallback(OnPlayerProjectileImpact);
         pc.Launch(angle, power, playerTank.transform.position.x < aiTank.transform.position.x);
+
+        // same barrel recoil as multiplayer — shifts angle a bit after firing
+        if (angleSlider != null)
+            angleSlider.value = Mathf.Clamp(angle + UnityEngine.Random.Range(-4f, 4f), 0f, 90f);
 
         CancelInvoke(nameof(OnProjectileResolved));
         Invoke(nameof(OnProjectileResolved), 5.0f);

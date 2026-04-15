@@ -2,7 +2,6 @@
     <Style src="project://database/Assets/UI/USS/Styles.uss?fileID=7433441132597879392&amp;guid=09fe49dad84774a4a8174b0bdf6ffc81&amp;type=3#Styles"/>
     <Style src="project://database/Assets/UI/USS/CombatStyles.uss?fileID=7433441132597879392&amp;guid=ded8361262aaf408aa73c3c438d418fe&amp;type=3#CombatStyles"/>
     <ui:VisualElement name="root" class="combat-root">
-        <ui:Button name="leave-btn" text="X" class="leave-btn"/>
         <ui:VisualElement class="top-bar">
             <ui:Label name="room-code-label" text="Room ------" class="mini-top-text"/>
             <ui:Label name="map-type-label" text="Desert" class="mini-top-text mini-map-text"/>
@@ -50,6 +49,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="hud-overlay" picking-mode="Ignore" class="hud-overlay" style="top: -4px; bottom: 4px; right: 0; left: 0;">
+            <ui:Button name="leave-btn" text="X" class="leave-btn"/>
             <ui:VisualElement name="game-over-overlay" class="game-over-overlay hidden">
                 <ui:VisualElement class="game-over-card">
                     <ui:VisualElement name="game-over-crown" class="game-over-crown"/>

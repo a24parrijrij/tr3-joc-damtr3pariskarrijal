@@ -19,7 +19,6 @@ public class TerrainGenerator : MonoBehaviour
     public float lacunarity   = 2.1f;  // frequency multiplier per octave
 
     private float[]           heights;
-    private Color             currentGroundColor = Color.white;
     private MeshFilter        meshFilter;
     private PolygonCollider2D polyCollider;
 
@@ -39,37 +38,6 @@ public class TerrainGenerator : MonoBehaviour
         Random.InitState(seed);
         float offset = Random.Range(0f, 10000f);
 
-        // Configure biome settings — shapes tuned aggressively per biome
-        switch (mapType.ToLower())
-        {
-            case "snow":
-                // Tall sharp peaks, high frequency variation
-                currentGroundColor = new Color(0.88f, 0.93f, 1f);
-                maxHeight = 7.5f; noiseScale = 0.55f;
-                octaves = 6; persistence = 0.6f; lacunarity = 2.4f; break;
-            case "grassland":
-                // Gentle rolling hills, very flat
-                currentGroundColor = new Color(0.18f, 0.72f, 0.25f);
-                maxHeight = 2.8f; noiseScale = 0.18f;
-                octaves = 3; persistence = 0.4f; lacunarity = 1.8f; break;
-            case "canyon":
-                // Deep valley forced in the center, high walls on both sides
-                currentGroundColor = new Color(0.76f, 0.35f, 0.15f);
-                maxHeight = 7.0f; noiseScale = 0.5f;
-                octaves = 4; persistence = 0.5f; lacunarity = 2.0f; break;
-            case "volcanic":
-                // Jagged sharp spikes, very irregular
-                currentGroundColor = new Color(0.22f, 0.08f, 0.08f);
-                maxHeight = 6.5f; noiseScale = 0.65f;
-                octaves = 7; persistence = 0.65f; lacunarity = 2.6f; break;
-            case "desert":
-            default:
-                // Smooth dunes, moderate height
-                currentGroundColor = new Color(0.88f, 0.68f, 0.28f);
-                maxHeight = 4.5f; noiseScale = 0.28f;
-                octaves = 4; persistence = 0.45f; lacunarity = 2.0f; break;
-        }
-
         heights = new float[columns];
         for (int i = 0; i < columns; i++)
         {
@@ -78,37 +46,12 @@ public class TerrainGenerator : MonoBehaviour
             heights[i]  = baseHeight + fbm * maxHeight;
         }
 
-        // Canyon special case: carve a deep valley in the center third
-        if (mapType.ToLower() == "canyon")
-        {
-            for (int i = 0; i < columns; i++)
-            {
-                float xNorm = i / (float)(columns - 1);
-                // Distance from center (0=center, 1=edge)
-                float distFromCenter = Mathf.Abs(xNorm - 0.5f) * 2f;
-                // Only apply the valley to the middle 60%
-                if (distFromCenter < 0.6f)
-                {
-                    float valleyDepth = (1f - distFromCenter / 0.6f);
-                    heights[i] -= valleyDepth * 4.5f;
-                }
-            }
-        }
-
         // Clamp so terrain never goes above visible camera area
         for (int i = 0; i < columns; i++)
             heights[i] = Mathf.Clamp(heights[i], baseHeight + 0.3f, baseHeight + maxHeight);
 
-        BuildMesh(currentGroundColor);
+        BuildMesh();
         BuildCollider();
-
-        // Set material color directly via _BaseColor (works with URP Unlit shader)
-        // EnableKeyword("_VERTEX_COLORS") does NOT work in URP — material.color does.
-        var rend = GetComponent<MeshRenderer>();
-        if (rend != null)
-        {
-            rend.material.color = currentGroundColor;
-        }
     }
 
     // Fractional Brownian Motion — stacks multiple noise octaves for mountain look
@@ -131,13 +74,12 @@ public class TerrainGenerator : MonoBehaviour
     }
 
     // Construeix el mesh del terreny a partir dels heights
-    void BuildMesh(Color col)
+    void BuildMesh()
     {
         var mesh   = new Mesh();
         var verts  = new Vector3[columns * 2];
         var tris   = new int[(columns - 1) * 6];
         var uvs    = new Vector2[columns * 2];
-        var colors = new Color[columns * 2];
 
         float stepX  = width / (columns - 1);
         float startX = -width / 2f;
@@ -150,10 +92,6 @@ public class TerrainGenerator : MonoBehaviour
             verts[i * 2 + 1] = new Vector3(x, bottom,     0f);
             uvs[i * 2]       = new Vector2((float)i / (columns - 1), 1f);
             uvs[i * 2 + 1]   = new Vector2((float)i / (columns - 1), 0f);
-            
-            // Bottom is darker for better depth
-            colors[i * 2]     = col;
-            colors[i * 2 + 1] = col * 0.4f;
         }
 
         int t = 0;
@@ -168,7 +106,6 @@ public class TerrainGenerator : MonoBehaviour
         mesh.vertices  = verts;
         mesh.triangles = tris;
         mesh.uv        = uvs;
-        mesh.colors    = colors; // Assign the color array
         mesh.RecalculateNormals();
         meshFilter.mesh = mesh;
     }
@@ -212,7 +149,7 @@ public class TerrainGenerator : MonoBehaviour
             heights[i] = Mathf.Min(heights[i], Mathf.Max(baseHeight + 0.2f, carved));
         }
 
-        BuildMesh(currentGroundColor);
+        BuildMesh();
         BuildCollider();
     }
 

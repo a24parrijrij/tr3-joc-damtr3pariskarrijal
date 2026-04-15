@@ -125,4 +125,5 @@
     border-color: rgba(255,255,255,0.2);
     color: rgb(200, 200, 220);
     font-size: 14px;
+    z-index: 10;
 }
