@@ -41,6 +41,7 @@ public class VsAIManager : MonoBehaviour
     private Label         gameOverSubtitle;
     private Label         goLocalHp;
     private Label         goEnemyHp;
+    private Label         goDuration;
     private Label         connectionStatusLabel;
     private Label         roomCodeLabel;
     private Label         mapTypeLabel;
@@ -61,6 +62,7 @@ public class VsAIManager : MonoBehaviour
     public float turnTimeLimit     = 15f;
     private float _turnTimeRemaining = 0f;
     private bool  _timerActive       = false;
+    private float _gameStartTime     = 0f;
 
     void Awake() { Instance = this; }
 
@@ -155,6 +157,7 @@ public class VsAIManager : MonoBehaviour
         gameOverSubtitle      = root.Q<Label>("game-over-subtitle");
         goLocalHp             = root.Q<Label>("go-local-hp");
         goEnemyHp             = root.Q<Label>("go-enemy-hp");
+        goDuration            = root.Q<Label>("go-duration");
         connectionStatusLabel = root.Q<Label>("connection-status-label");
         roomCodeLabel         = root.Q<Label>("room-code-label");
         mapTypeLabel          = root.Q<Label>("map-type-label");
@@ -267,6 +270,7 @@ public class VsAIManager : MonoBehaviour
 
         RefreshHpBars();
         UpdateTurnUI();
+        _gameStartTime = Time.time;
     }
 
     // ── Button handlers ────────────────────────────────────────────────────
@@ -526,6 +530,7 @@ public class VsAIManager : MonoBehaviour
         if (gameOverSubtitle != null) gameOverSubtitle.text = subtitle;
         if (goLocalHp != null) goLocalHp.text = playerTank != null ? playerTank.currentHp.ToString() : "0";
         if (goEnemyHp != null) goEnemyHp.text = aiTank     != null ? aiTank.currentHp.ToString()     : "0";
+        if (goDuration != null) goDuration.text = (int)(Time.time - _gameStartTime) + "s";
         StartCoroutine(ShowGameOverDelay(1.5f));
     }
 

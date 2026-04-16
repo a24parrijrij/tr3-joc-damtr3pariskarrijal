@@ -1,56 +1,57 @@
-# SDD Pla d'implementació — Sistema de terreny
+# Tank Stars - Implementation Plan
 
-## Fase 1: Generació de l'array d'alçades
+## Phase 1: Terrain Generation
 
-1. Inicialitzar el generador aleatori amb el seed proporcionat.
-2. Generar un offset aleatori per al soroll Perlin.
-3. Configurar els paràmetres del bioma (color, maxHeight, noiseScale) segons el mapType.
-4. Per a cada columna (0 a 119):
-   - Calcular la coordenada X normalitzada.
-   - Aplicar la funció FBM (soroll Perlin multi-octava amb 5 octaves).
-   - Limitar l'alçada resultant al rang [baseHeight + 0.3, baseHeight + maxHeight].
-5. Emmagatzemar les alçades a l'array `heights[]`.
+1. Set up terrain game object with MeshFilter, MeshRenderer, and PolygonCollider2D
+2. Create height array based on map type (desert, snow, grassland, canyon, volcanic)
+3. Apply noise algorithm to create natural-looking terrain variations
+4. Build 2D mesh from height array
+5. Update polygon collider to match mesh surface
 
-## Fase 2: Construcció del mesh
+## Phase 2: Terrain Destruction
 
-1. Crear arrays de vèrtexs (2 per columna: superfície i base), triangles, UVs i colors.
-2. Per a cada columna:
-   - Vèrtex superior: (x, heights[i], 0).
-   - Vèrtex inferior: (x, bottom, 0) on bottom = baseHeight - 3.
-   - Color superior: color del bioma.
-   - Color inferior: color del bioma * 0.4 (més fosc).
-3. Construir els triangles connectant columnes adjacents (2 triangles per parell).
-4. Assignar el mesh al MeshFilter.
+1. Detect projectile collision with terrain
+2. Calculate crater shape at impact point
+3. Modify height array to create depression
+4. Rebuild mesh with new terrain shape
+5. Update collider to match new surface
+6. Make tanks fall to new surface level
 
-## Fase 3: Construcció del collider
+## Phase 3: Tank Movement
 
-1. Crear un array de Vector2 amb les posicions de superfície de cada columna.
-2. Afegir 2 punts extra per tancar la forma per la base (cantonada inferior dreta i esquerra).
-3. Assignar el path al PolygonCollider2D.
+1. Set up tank game object with Rigidbody2D and collider
+2. Implement horizontal movement within bounds
+3. Add slope detection to prevent climbing steep areas
+4. Snap tank to terrain surface after movement
+5. Restrict movement to player's turn only
 
-## Fase 4: Destrucció del terreny
+## Phase 4: Shooting System
 
-1. Rebre la posició d'impacte mundial i el radi.
-2. Convertir la posició d'impacte a coordenades locals del terreny.
-3. Per a cada columna dins del radi:
-   - Calcular la distància horitzontal (dx) des de l'impacte.
-   - Calcular el factor de profunditat: `depth = 1 - (dx / radius)`.
-   - Calcular l'alçada esculpida: `carved = localY - radius * 1.4 * depth`.
-   - Aplicar: `heights[i] = Min(heights[i], Max(baseHeight + 0.2, carved))`.
-4. Reconstruir el mesh amb els nous valors d'alçada.
-5. Reconstruir el collider.
+1. Create projectile prefab with physics
+2. Calculate projectile trajectory from angle and power
+3. Detect collision with tanks or terrain
+4. Apply damage: 35 HP direct hit, 15 HP near miss
+5. Trigger terrain destruction on ground hit
 
-## Fase 5: Integració amb el joc
+## Phase 5: Game Flow
 
-1. Implementar GetHeightAtX per permetre als tancs consultar l'alçada del terreny.
-2. Implementar PlaceOnTerrain als TankController per enganxar-se a la superfície.
-3. Connectar el ProjectileController per cridar DestroyTerrain a l'impacte.
-4. Cridar PlaceOnTerrain en ambdós tancs després de cada destrucció.
+1. Implement turn-based system (player vs player or player vs AI)
+2. Add turn timer (15 seconds)
+3. Track HP for both tanks
+4. Detect win condition when HP reaches zero
+5. Show game over screen with results
 
-## Fase 6: Verificació
+## Phase 6: AI Integration
 
-1. Provar amb crides manuals des d'un botó a l'Inspector abans de connectar al bucle de joc.
-2. Verificar que el mateix seed produeix el mateix terreny en dos clients separats.
-3. Verificar que la destrucció no crea buits ni forats al collider.
-4. Verificar que els tancs cauen correctament després de la destrucció.
-5. Mesurar el temps de reconstrucció del mesh per confirmar que és inferior a 16ms.
+1. Set up ML-Agent component on AI tank
+2. Configure observations (tank positions, terrain, HP)
+3. Train model with PPO algorithm
+4. Add fallback heuristic when no model is loaded
+
+## Phase 7: Multiplayer
+
+1. Create server to handle game state
+2. Implement room creation and joining
+3. Synchronize terrain between all players
+4. Broadcast shots and impacts in real-time
+5. Validate all actions server-side

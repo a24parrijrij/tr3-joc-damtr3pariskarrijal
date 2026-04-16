@@ -392,6 +392,7 @@ function handleFireShot(ws, payload) {
 
   if (session.status === 'finished') {
     broadcast(session, buildStatePayload('game_end', session));
+    saveGameResult(session);
   }
 }
 
@@ -467,3 +468,27 @@ wss.on('connection', (ws) => {
 });
 
 console.log(`Game Service running on port ${PORT}`);
+
+async function saveGameResult(session) {
+  const loserId = session.winnerPlayerId === session.player1Id
+    ? session.player2Id : session.player1Id;
+  const winnerHp = session.winnerPlayerId === session.player1Id
+    ? session.player1Hp : session.player2Hp;
+  const duration = Math.floor((session.finishedAt - session.startedAt) / 1000);
+  
+  try {
+    await fetch(`${API_BASE_URL}/results`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameId: session.gameId,
+        winnerId: session.winnerPlayerId,
+        loserId,
+        winnerHp,
+        durationSeconds: duration
+      })
+    });
+  } catch (err) {
+    console.error('Error guardant resultat:', err);
+  }
+}

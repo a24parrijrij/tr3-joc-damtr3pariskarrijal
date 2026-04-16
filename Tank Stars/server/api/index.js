@@ -9,9 +9,11 @@ app.use(express.json());
 // Routes
 const authRoutes  = require('./routes/auth');
 const gameRoutes  = require('./routes/games');
+const resultRoutes = require('./routes/results');
 
-app.use('/auth',  authRoutes);
-app.use('/games', gameRoutes);
+app.use('/auth',   authRoutes);
+app.use('/games',  gameRoutes);
+app.use('/results', resultRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

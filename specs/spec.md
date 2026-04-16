@@ -1,56 +1,82 @@
-# SDD Especificació — Terreny de Tank Stars
+# Tank Stars - Technical Specification
 
-## 1. GenerateTerrain(int seed, string mapType)
+---
 
-### Entrada
-- `seed`: enter per inicialitzar el generador de nombres aleatoris (reproducibilitat determinista).
-- `mapType`: cadena de text, un de: "desert", "snow", "grassland", "canyon", "volcanic".
+## 1. Terrain Generation
 
-### Sortida
-- Mesh visible amb turons des de x=-11 fins a x=+11 unitats mundials.
-- PolygonCollider2D coincidint exactament amb la superfície del mesh.
+### 1.1 GenerateTerrain
+Creates procedural terrain based on map type (desert, snow, grassland, canyon, volcanic).
 
-### Comportament
-- El bioma afecta el color dels vèrtexs, l'alçada màxima (maxHeight) i l'escala de soroll (noiseScale).
-- El mateix seed + mapType sempre produeix exactament el mateix terreny.
-- L'alçada del terreny mai baixa de `baseHeight + 0.3` ni supera `baseHeight + maxHeight`.
-- S'utilitza FBM (Fractional Brownian Motion) amb 5 octaves, persistència 0.55 i lacunaritat 2.1.
-- El mesh té 120 columnes amb 2 vèrtexs per columna (superfície i base).
-- Els colors dels vèrtexs inferiors són el 40% del color del bioma per donar profunditat visual.
+**Behavior:**
+- Single-player mode: Generate terrain using noise algorithms with unique parameters per biome
+- Each biome has its own visual character (dunes for desert, peaks for volcanic, etc.)
+- Each game uses a random seed so terrain is different each time
+- Multiplayer mode: Load terrain heights from server to ensure all players see the same map
+- Terrain always stays within defined height bounds
+- Tanks stick to the surface after terrain changes
 
-## 2. DestroyTerrain(Vector2 impactWorldPos, float radius)
+### 1.2 DestroyTerrain
+Creates craters when projectiles hit the ground.
 
-### Entrada
-- `impactWorldPos`: posició mundial de l'impacte (coordenades x, y).
-- `radius`: radi del cràter en unitats mundials.
+**Behavior:**
+- Smooth, rounded crater shape (not sharp V-shape)
+- Updates mesh and collision after each impact
+- Tanks fall to new surface level after destruction
 
-### Sortida
-- Cràter circular esculpit al mesh.
-- Collider actualitzat sense buits ni forats.
+### 1.3 GetHeightAtX
+Returns the Y position of terrain at a given X coordinate.
 
-### Comportament
-- Les columnes dins del radi tenen la seva alçada reduïda per una funció de profunditat: `depth = 1 - (dx / radius)`.
-- L'alçada esculpida es calcula com: `carved = localY - radius * 1.4 * depth`.
-- S'aplica `Mathf.Min(heights[i], carved)`: només es pot eliminar terreny, mai afegir-ne.
-- L'alçada mínima és sempre `baseHeight + 0.2` (el terreny mai desapareix completament).
-- Ambdós tancs es re-col·loquen a la superfície després de la destrucció (PlaceOnTerrain).
+---
 
-## 3. GetHeightAtX(float worldX)
+## 2. Tank Controller
 
-### Entrada
-- `worldX`: coordenada X mundial.
+### 2.1 Tank Properties
+- Health points (HP)
+- Movement speed
+- Barrel angle (aiming)
+- Player identification
 
-### Sortida
-- Coordenada Y mundial de la superfície del terreny a aquella X.
+### 2.2 Movement
+- Move left or right within bounds
+- Cannot move during opponent's turn
+- Cannot move on steep slopes
 
-### Comportament
-- Converteix la coordenada mundial a índex de columna local.
-- Retorna l'alçada de la columna més propera més la posició Y del transform del terreny.
+### 2.3 Aiming
+- Barrel angle adjustable 0-90 degrees
+- Power level adjustable 10-100
 
-## 4. Casos límit
+### 2.4 Shooting
+- Fires projectile with given angle and power
+- Projectile follows physics trajectory
+- Damage on hit: 35 HP (direct), 15 HP (near miss)
 
-- **Destrucció a la vora del terreny**: les columnes fora del rang es limiten amb Mathf.Clamp.
-- **Cràters superposats**: s'aplica el mínim entre l'alçada existent i la nova alçada esculpida.
-- **Tanc cau després de destrucció**: PlaceOnTerrain() es crida després de cada DestroyTerrain().
-- **Terreny amb seed = 0**: funciona normalment, Random.InitState(0) és un seed vàlid.
-- **MapType no reconegut**: utilitza els valors per defecte del desert.
+---
+
+## 3. Projectile
+
+### 3.1 Launch
+- Launches at specified angle and power
+- Speed proportional to power value
+
+### 3.2 Collision
+- Detects collision with terrain (ground hit)
+- Detects collision with tanks (direct hit)
+- Calls damage callback on impact
+
+---
+
+## 4. Game States
+
+### 4.1 Turn System
+- Player turn: Aim and fire
+- AI turn: AI makes decision and fires
+- Turn timer: 15 seconds per turn
+
+### 4.2 Win Condition
+- First tank to reduce opponent's HP to 0 wins
+
+### 4.3 Game Over
+- Show winner
+- Display final HP for both tanks
+- Show match duration
+- Button to return to menu
