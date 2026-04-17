@@ -7,7 +7,7 @@ using System.Collections;
 
 public class WaitingManager : MonoBehaviour
 {
-    private string apiUrl = "http://localhost/api";
+    private string apiUrl = "http://65.108.158.166/api";
 
     private VisualElement root;
     private Label roomCodeText;

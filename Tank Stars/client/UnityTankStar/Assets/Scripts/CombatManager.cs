@@ -22,7 +22,7 @@ public class CombatManager : MonoBehaviour
     public Camera mainCamera;
 
     // websocket url — hardcoded to localhost for now, only works on the same machine
-    private const string SocketUrl = "ws://localhost/game/";
+    private const string SocketUrl = "ws://65.108.158.166/game/";
 
     // Elements UXML
     private VisualElement root;

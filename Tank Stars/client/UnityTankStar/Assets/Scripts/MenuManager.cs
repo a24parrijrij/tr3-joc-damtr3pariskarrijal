@@ -10,7 +10,7 @@ using UnityEditor;
 
 public class MenuManager : MonoBehaviour
 {
-    private string apiUrl = "http://localhost/api";
+    private string apiUrl = "http://65.108.158.166/api";
     private static readonly string[] MapTypes = { "desert", "snow", "grassland", "canyon", "volcanic" };
 
     private VisualElement root;

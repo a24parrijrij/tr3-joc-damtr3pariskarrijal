@@ -7,7 +7,7 @@ using System.Collections;
 
 public class AuthManager : MonoBehaviour
 {
-    private string apiUrl = "http://localhost/api";
+    private string apiUrl = "http://65.108.158.166/api";
 
     private TextField usernameField;
     private TextField passwordField;
