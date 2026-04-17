@@ -48,6 +48,7 @@ public class CombatInput : MonoBehaviour
         }
 
         // A/D o Esquerra/Dreta -> moure el tanc local
+        bool moved = false;
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
             var tank = manager.LocalTank;
@@ -55,6 +56,7 @@ public class CombatInput : MonoBehaviour
             {
                 tank.Move(-1f, Time.deltaTime);
                 tank.PlaceOnTerrain();
+                moved = true;
             }
         }
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
@@ -64,8 +66,11 @@ public class CombatInput : MonoBehaviour
             {
                 tank.Move(1f, Time.deltaTime);
                 tank.PlaceOnTerrain();
+                moved = true;
             }
         }
+        // Notify server on every frame of movement so the opponent sees real-time updates
+        if (moved) manager.SendTankPosition();
 
         // W/S o Amunt/Avall -> ajustar slider d'angle
         float angleDir = 0f;

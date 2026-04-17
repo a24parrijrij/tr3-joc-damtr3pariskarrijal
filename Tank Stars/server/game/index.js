@@ -5,7 +5,7 @@ const PORT = parseInt(process.env.PORT || '3002', 10);
 const MAX_HP = 100;
 const PLAYER1_X = 15;
 const PLAYER2_X = 85;
-const TERRAIN_RADIUS = 5;
+const TERRAIN_RADIUS = 3;
 const MAP_TYPES = ['desert', 'snow', 'grassland', 'canyon', 'volcanic'];
 const MAP_PRESETS = {
   desert: [34, 36, 39, 44, 49, 53, 56, 58, 57, 54, 48, 43, 39, 37, 36, 38, 43, 50, 58, 63, 66, 65, 61, 54],
@@ -265,7 +265,14 @@ function applyCrater(terrainHeights, impactX, impactY, radius) {
 
     // Cosine falloff → smooth rounded bowl instead of sharp V-shape
     const depthFactor = Math.cos((deltaX / radius) * Math.PI * 0.5);
-    const carvedHeight = Math.round(impactY - (radius * 0.8 * depthFactor));
+    const depth = radius * 0.5 * depthFactor;
+    // Use the higher (less aggressive) of two carve baselines:
+    // - from impact point  → correct for columns near the landing height
+    // - from column height → prevents tall volcanic peaks from being over-carved
+    //   when the blast landed in a nearby valley (impactY << column height)
+    const carvedFromImpact = Math.round(impactY - depth);
+    const carvedFromColumn = Math.round(terrainHeights[index] - depth);
+    const carvedHeight = Math.max(carvedFromImpact, carvedFromColumn);
     terrainHeights[index] = Math.max(6, Math.min(terrainHeights[index], carvedHeight));
   }
 }

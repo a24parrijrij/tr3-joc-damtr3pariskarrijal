@@ -37,8 +37,14 @@ public class CombatManager : MonoBehaviour
     private Label turnBannerText;
     private VisualElement gameOverOverlay;
     private Label gameOverTitle, gameOverSubtitle, goLocalHp, goEnemyHp, goDuration;
+    private Label turnTimerLabel;
 
     private GameObject backgroundObj;
+
+    // Timer
+    private float turnTimeLimit = 15f;
+    private float _turnTimeRemaining = 0f;
+    private bool _timerActive = false;
 
     // WebSocket i estat del joc
     private WebSocket websocket;
@@ -55,6 +61,7 @@ public class CombatManager : MonoBehaviour
     private bool uiBound;
     private Coroutine projectileRoutine, shakeRoutine;
     private int[] pendingTerrainHeights;
+    private float pendingLandingWorldX;
 
     // Propietats públiques (CombatInput les utilitza)
     public TankController LocalTank => isPlayer1 ? player1Tank : player2Tank;
@@ -75,6 +82,29 @@ public class CombatManager : MonoBehaviour
 #if !UNITY_WEBGL || UNITY_EDITOR
         websocket?.DispatchMessageQueue();
 #endif
+        if (!_timerActive || !uiBound) return;
+
+        _turnTimeRemaining -= Time.deltaTime;
+
+        int secs = Mathf.CeilToInt(Mathf.Max(0f, _turnTimeRemaining));
+        if (turnTimerLabel != null)
+        {
+            turnTimerLabel.text = secs.ToString();
+            if (secs <= 5)
+                turnTimerLabel.AddToClassList("urgent");
+            else
+                turnTimerLabel.RemoveFromClassList("urgent");
+        }
+
+        if (_turnTimeRemaining <= 0f)
+        {
+            _timerActive = false;
+            if (turnTimerLabel != null) turnTimerLabel.AddToClassList("hidden");
+            if (combatLogLabel != null) combatLogLabel.text = "Temps esgotat! Tir automàtic!";
+            float angle = angleSlider != null ? angleSlider.value : 45f;
+            float power = powerSlider != null ? powerSlider.value : 75f;
+            FireShot(angle, power);
+        }
     }
 
     // ── Inicialització UI ──────────────────────────────────────────────────
@@ -116,6 +146,7 @@ public class CombatManager : MonoBehaviour
         localPlayerNameLabel  = root.Q<Label>("local-player-name");
         enemyPlayerNameLabel  = root.Q<Label>("enemy-player-name");
         damagePopup           = root.Q<Label>("damage-popup");
+        turnTimerLabel       = root.Q<Label>("turn-timer-label");
 
         gameManager = GameManager.EnsureInstance();
 
@@ -272,10 +303,9 @@ public class CombatManager : MonoBehaviour
                 break;
 
             case "positions_update":
-                // using >= 0 instead of > 0 so position 0 (far left edge) is not ignored
-                if (msg.player1X >= 0) player1X = msg.player1X;
-                if (msg.player2X >= 0) player2X = msg.player2X;
-                PlaceTanksFromPercent();
+                if (msg.player1X > 0) player1X = msg.player1X;
+                if (msg.player2X > 0) player2X = msg.player2X;
+                SyncRemoteTankPosition();
                 break;
 
             case "error":
@@ -349,6 +379,14 @@ public class CombatManager : MonoBehaviour
         bool myTurn = IsMyTurn();
 
         if (connectionStatusLabel != null) connectionStatusLabel.text = "En directe";
+
+        // Left (blue) = player1 name, Right (red) = player2 name
+        string myName = string.IsNullOrEmpty(gameManager.username) ? "Tu" : gameManager.username;
+        if (localPlayerNameLabel != null)
+            localPlayerNameLabel.text = isPlayer1 ? myName : "Oponent";
+        if (enemyPlayerNameLabel != null)
+            enemyPlayerNameLabel.text = isPlayer1 ? "Oponent" : myName;
+
         if (turnLabel != null) turnLabel.text = myTurn ? "El teu torn" : "Torn de l'oponent";
         ShowTurnBanner(myTurn ? "EL TEU TORN" : "TORN OPONENT");
 
@@ -356,6 +394,11 @@ public class CombatManager : MonoBehaviour
 
         SetFireEnabled(myTurn);
         SetMoveEnabled(myTurn);
+
+        if (myTurn)
+            StartTurnTimer();
+        else
+            StopTurnTimer();
     }
 
     // ── game_update ────────────────────────────────────────────────────────
@@ -371,19 +414,19 @@ public class CombatManager : MonoBehaviour
         Vector3 p1PosBefore = player1Tank != null ? player1Tank.transform.position : Vector3.zero;
         Vector3 p2PosBefore = player2Tank != null ? player2Tank.transform.position : Vector3.zero;
 
-        // Only sync the REMOTE player's position from game_update.
-        // Overriding the local player's position here causes the tank to snap back
-        // to the server's initial value, discarding any movement done this turn.
-        // The local position is already correct — it was confirmed by positions_update.
-        if (isPlayer1) { if (msg.player2X > 0) player2X = msg.player2X; }
-        else           { if (msg.player1X > 0) player1X = msg.player1X; }
-        PlaceTanksFromPercent();
+        if (msg.player1X > 0) player1X = msg.player1X;
+        if (msg.player2X > 0) player2X = msg.player2X;
+        SyncRemoteTankPosition();
 
         UpdateHpFromMsg(msg);
 
         // Cache terrain heights — applied to the mesh after the bullet animation ends
         if (msg.terrainHeights != null && msg.terrainHeights.Length > 0)
+        {
             pendingTerrainHeights = msg.terrainHeights;
+            if (terrain != null)
+                pendingLandingWorldX = (msg.lastLandingX / 100f) * terrain.width - terrain.width / 2f;
+        }
 
         // El servidor ha processat el tir anterior — resetejar shotInFlight
         shotInFlight = false;
@@ -393,6 +436,12 @@ public class CombatManager : MonoBehaviour
 
         if (turnLabel != null) turnLabel.text = myTurn ? "El teu torn" : "Torn de l'oponent";
         ShowTurnBanner(myTurn ? "EL TEU TORN" : "TORN OPONENT");
+        
+        if (myTurn)
+            StartTurnTimer();
+        else
+            StopTurnTimer();
+
         LocalTank?.StartTurn();
 
         // Animar l'últim tir si n'hi ha
@@ -408,9 +457,15 @@ public class CombatManager : MonoBehaviour
                 Vector3 shooterFirePos = isLocalAttacker ? p1PosBefore : p2PosBefore;
                 if (!isPlayer1) shooterFirePos = isLocalAttacker ? p2PosBefore : p1PosBefore;
 
+                // Target's pre-shot position — bullet stops here on a direct hit instead of passing through
+                Vector3 targetPreShotPos = isPlayer1
+                    ? (isLocalAttacker ? p2PosBefore : p1PosBefore)
+                    : (isLocalAttacker ? p1PosBefore : p2PosBefore);
+
                 bool facingRight = shooterFirePos.x < target.transform.position.x;
                 shooter.SetBarrelAngle(msg.lastAngle, facingRight);
-                AnimateProjectile(shooterFirePos, msg.lastLandingX, msg.lastAngle, msg.lastPower, facingRight);
+                AnimateProjectile(shooterFirePos, msg.lastLandingX, msg.lastAngle, msg.lastPower, facingRight,
+                                  msg.lastShotResult == "direct_hit", targetPreShotPos);
             }
             else
             {
@@ -450,6 +505,7 @@ public class CombatManager : MonoBehaviour
 
         gameFinished = true;
         shotInFlight = false;
+        StopTurnTimer();
 
         if (connectionStatusLabel != null) connectionStatusLabel.text = "FI DE PARTIDA";
 
@@ -462,15 +518,15 @@ public class CombatManager : MonoBehaviour
 
     private void HandleTerrainDestroyed(SocketMessage msg)
     {
-        // Terrain is rebuilt from terrainHeights sent in game_update,
-        // applied at the end of the bullet animation so the crater appears
-        // when the projectile visually lands — not before it fires.
+        // Terrain crater is applied via DestroyTerrain (radius 0.5f, same as VS AI mode)
+        // at the end of the bullet animation — no action needed here.
     }
 
     private void ApplyPendingTerrain()
     {
         if (pendingTerrainHeights == null || terrain == null) return;
-        terrain.LoadServerHeights(pendingTerrainHeights);
+        float worldY = terrain.GetHeightAtX(pendingLandingWorldX);
+        terrain.DestroyTerrain(new Vector2(pendingLandingWorldX, worldY), 0.5f);
         player1Tank?.PlaceOnTerrain();
         player2Tank?.PlaceOnTerrain();
         pendingTerrainHeights = null;
@@ -480,12 +536,14 @@ public class CombatManager : MonoBehaviour
 
     private void UpdateHpFromMsg(SocketMessage msg)
     {
+        // Left bar (blue) always = player1, Right bar (red) always = player2
+        SetHpBar(localHpFill, msg.player1Hp);
+        SetHpBar(enemyHpFill, msg.player2Hp);
+        if (localHpNum != null) localHpNum.text = msg.player1Hp.ToString();
+        if (enemyHpNum != null) enemyHpNum.text = msg.player2Hp.ToString();
+        // Keep local/enemy semantics for game logic (game-over screen, tank HP)
         localHp = isPlayer1 ? msg.player1Hp : msg.player2Hp;
         enemyHp = isPlayer1 ? msg.player2Hp : msg.player1Hp;
-        SetHpBar(localHpFill, localHp);
-        SetHpBar(enemyHpFill, enemyHp);
-        if (localHpNum != null) localHpNum.text = localHp.ToString();
-        if (enemyHpNum != null) enemyHpNum.text = enemyHp.ToString();
         if (LocalTank != null) LocalTank.currentHp = localHp;
         if (RemoteTank != null) RemoteTank.currentHp = enemyHp;
     }
@@ -512,6 +570,27 @@ public class CombatManager : MonoBehaviour
         }
     }
 
+    // Moves the remote (opponent) tank to its server-confirmed position.
+    // Uses CombatManager.terrain directly so it works even if TankController.terrain is unset.
+    // Never touches the local player's tank.
+    private void SyncRemoteTankPosition()
+    {
+        if (terrain == null || terrain.width <= 0) return;
+
+        float remoteXPercent = isPlayer1 ? player2X : player1X;
+        float worldX = (remoteXPercent / 100f) * terrain.width - terrain.width / 2f;
+        float worldY = terrain.GetHeightAtX(worldX) + 0.35f;  // 0.35 = same offset as TankController.PlaceOnTerrain
+
+        TankController remote = isPlayer1 ? player2Tank : player1Tank;
+        if (remote == null) return;
+
+        remote.transform.position = new Vector3(worldX, worldY, 0f);
+
+        // Zero physics velocity so the tank doesn't drift after being repositioned
+        var rb = remote.GetComponent<Rigidbody2D>();
+        if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
+    }
+
     // ── Accions del jugador ────────────────────────────────────────────────
 
     public void OnMoveLeft()
@@ -530,16 +609,19 @@ public class CombatManager : MonoBehaviour
         SendTankPosition();
     }
 
-    private void SendTankPosition()
+    public void SendTankPosition()
     {
         if (terrain == null || LocalTank == null) return;
-        float newXPerc = (LocalTank.transform.position.x + terrain.width / 2f) / terrain.width * 100f;
+        float xPercent = (LocalTank.transform.position.x + terrain.width / 2f) / terrain.width * 100f;
+        // Keep stored value in sync with actual visual position
+        if (isPlayer1) player1X = xPercent;
+        else           player2X = xPercent;
         _ = SendJson(new MoveTankMessage
         {
             type = "move_tank",
             gameId = gameManager.gameId,
             playerId = gameManager.playerId,
-            newX = newXPerc
+            newX = xPercent
         });
     }
 
@@ -558,6 +640,7 @@ public class CombatManager : MonoBehaviour
         shotInFlight = true;
         SetFireEnabled(false);
         SetMoveEnabled(false);
+        StopTurnTimer();
 
         if (combatLogLabel != null) combatLogLabel.text = "Tir llançat!";
 
@@ -599,12 +682,19 @@ public class CombatManager : MonoBehaviour
 
     // ── Animació del projectil (purament visual, sense físiques) ───────────
 
-    private void AnimateProjectile(Vector3 startPos, float landingXPercent, float angle, float power, bool facingRight)
+    private void AnimateProjectile(Vector3 startPos, float landingXPercent, float angle, float power, bool facingRight,
+                                    bool isDirect = false, Vector3 directHitTargetPos = default)
     {
         if (projectilePrefab == null || terrain == null) return;
 
         float landingWorldX = (landingXPercent / 100f) * terrain.width - terrain.width / 2f;
-        Vector3 endPos = new Vector3(landingWorldX, terrain.GetHeightAtX(landingWorldX) + 0.5f, 0);
+        // Always store terrain landing X so DestroyTerrain uses the correct spot
+        pendingLandingWorldX = landingWorldX;
+
+        // On a direct hit the bullet stops at the tank; otherwise it lands on terrain
+        Vector3 endPos = isDirect
+            ? new Vector3(directHitTargetPos.x, directHitTargetPos.y, 0f)
+            : new Vector3(landingWorldX, terrain.GetHeightAtX(landingWorldX), 0f);
 
         // Snapshot terrain heights now — pendingTerrainHeights will be cleared by the coroutine
         var heights = pendingTerrainHeights;
@@ -669,10 +759,13 @@ public class CombatManager : MonoBehaviour
             Destroy(proj);
         }
 
-        // Apply terrain update now that the bullet has visually landed
-        if (newTerrainHeights != null && terrain != null)
+        // Apply terrain destruction matching VS AI mode (radius 0.5 world units, cosine falloff).
+        // Use pendingLandingWorldX so the crater is always at the server's impact point,
+        // even when the bullet stopped early at a tank (direct hit).
+        if (terrain != null)
         {
-            terrain.LoadServerHeights(newTerrainHeights);
+            float craterY = terrain.GetHeightAtX(pendingLandingWorldX);
+            terrain.DestroyTerrain(new Vector2(pendingLandingWorldX, craterY), 0.5f);
             player1Tank?.PlaceOnTerrain();
             player2Tank?.PlaceOnTerrain();
         }
@@ -744,6 +837,24 @@ public class CombatManager : MonoBehaviour
     {
         if (moveLeftButton != null) moveLeftButton.SetEnabled(on);
         if (moveRightButton != null) moveRightButton.SetEnabled(on);
+    }
+
+    private void StartTurnTimer()
+    {
+        _turnTimeRemaining = turnTimeLimit;
+        _timerActive = true;
+        if (turnTimerLabel != null)
+        {
+            turnTimerLabel.text = Mathf.CeilToInt(turnTimeLimit).ToString();
+            turnTimerLabel.RemoveFromClassList("urgent");
+            turnTimerLabel.RemoveFromClassList("hidden");
+        }
+    }
+
+    private void StopTurnTimer()
+    {
+        _timerActive = false;
+        if (turnTimerLabel != null) turnTimerLabel.AddToClassList("hidden");
     }
 
     private void ShowTurnBanner(string text)
