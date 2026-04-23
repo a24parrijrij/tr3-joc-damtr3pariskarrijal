@@ -6,6 +6,22 @@ const MAX_HP = 100;
 const PLAYER1_X = 15;
 const PLAYER2_X = 85;
 const TERRAIN_RADIUS = 3;
+const SHOT_SPEED_SCALE = 0.12;
+const PHYSICS_GRAVITY = 9.81;
+const TERRAIN_HEIGHT_WORLD_UNITS = 5.5;
+const WORLD_TO_HEIGHT_UNITS = 100 / TERRAIN_HEIGHT_WORLD_UNITS;
+// Keep the existing multiplayer max range (80% at 100 power, 45 degrees) while
+// resolving hits from the actual projectile path.
+const WORLD_TO_PERCENT_X = (80 * PHYSICS_GRAVITY) / ((SHOT_SPEED_SCALE * 100) ** 2);
+const MUZZLE_OFFSET_X = 0.3 * WORLD_TO_PERCENT_X;
+const MUZZLE_OFFSET_Y = 0.55 * WORLD_TO_HEIGHT_UNITS;
+const TANK_HALF_WIDTH = 0.6 * WORLD_TO_PERCENT_X;
+const TANK_CENTER_Y_OFFSET = (0.35 + 0.064465) * WORLD_TO_HEIGHT_UNITS;
+const TANK_HALF_HEIGHT = (0.471069 * 0.5) * WORLD_TO_HEIGHT_UNITS;
+const PROJECTILE_RADIUS_X = 0.125 * WORLD_TO_PERCENT_X;
+const PROJECTILE_RADIUS_Y = 0.125 * WORLD_TO_HEIGHT_UNITS;
+const SHOT_STEP_SECONDS = 1 / 120;
+const MAX_SHOT_TIME = 5;
 const MAP_TYPES = ['desert', 'snow', 'grassland', 'canyon', 'volcanic'];
 const MAP_PRESETS = {
   desert: [34, 36, 39, 44, 49, 53, 56, 58, 57, 54, 48, 43, 39, 37, 36, 38, 43, 50, 58, 63, 66, 65, 61, 54],
@@ -242,17 +258,11 @@ function getTerrainHeightAtX(terrainHeights, impactX) {
     return 25;
   }
 
-  let bestIndex = 0;
-  let smallestDelta = Infinity;
-  for (let index = 0; index < terrainHeights.length; index += 1) {
-    const delta = Math.abs(getColumnX(index, terrainHeights.length) - impactX);
-    if (delta < smallestDelta) {
-      smallestDelta = delta;
-      bestIndex = index;
-    }
-  }
-
-  return terrainHeights[bestIndex];
+  const clampedX = Math.max(0, Math.min(100, impactX));
+  const srcIdx = (clampedX / 100) * (terrainHeights.length - 1);
+  const lo = Math.floor(srcIdx);
+  const hi = Math.min(lo + 1, terrainHeights.length - 1);
+  return terrainHeights[lo] + (terrainHeights[hi] - terrainHeights[lo]) * (srcIdx - lo);
 }
 
 function applyCrater(terrainHeights, impactX, impactY, radius) {
@@ -277,20 +287,128 @@ function applyCrater(terrainHeights, impactX, impactY, radius) {
   }
 }
 
+function getTankCollisionBounds(targetX, targetSurfaceY) {
+  return {
+    minX: targetX - TANK_HALF_WIDTH - PROJECTILE_RADIUS_X,
+    maxX: targetX + TANK_HALF_WIDTH + PROJECTILE_RADIUS_X,
+    minY: targetSurfaceY + TANK_CENTER_Y_OFFSET - TANK_HALF_HEIGHT - PROJECTILE_RADIUS_Y,
+    maxY: targetSurfaceY + TANK_CENTER_Y_OFFSET + TANK_HALF_HEIGHT + PROJECTILE_RADIUS_Y,
+  };
+}
+
+function getSegmentAabbHitAlpha(x1, y1, x2, y2, minX, maxX, minY, maxY) {
+  let tMin = 0;
+  let tMax = 1;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+
+  if (Math.abs(dx) < 1e-6) {
+    if (x1 < minX || x1 > maxX) return null;
+  } else {
+    let tx1 = (minX - x1) / dx;
+    let tx2 = (maxX - x1) / dx;
+    if (tx1 > tx2) [tx1, tx2] = [tx2, tx1];
+    tMin = Math.max(tMin, tx1);
+    tMax = Math.min(tMax, tx2);
+    if (tMin > tMax) return null;
+  }
+
+  if (Math.abs(dy) < 1e-6) {
+    if (y1 < minY || y1 > maxY) return null;
+  } else {
+    let ty1 = (minY - y1) / dy;
+    let ty2 = (maxY - y1) / dy;
+    if (ty1 > ty2) [ty1, ty2] = [ty2, ty1];
+    tMin = Math.max(tMin, ty1);
+    tMax = Math.min(tMax, ty2);
+    if (tMin > tMax) return null;
+  }
+
+  return tMin;
+}
+
+function simulateShotPath(session, attackerX, targetX, direction, angle, power) {
+  const radians = (angle * Math.PI) / 180;
+  const speed = power * SHOT_SPEED_SCALE;
+  const tankSurfaceY = getTerrainHeightAtX(session.terrainHeights, targetX);
+  const tankBounds = getTankCollisionBounds(targetX, tankSurfaceY);
+
+  let x = Math.max(0, Math.min(100, attackerX + direction * MUZZLE_OFFSET_X));
+  let y = getTerrainHeightAtX(session.terrainHeights, attackerX) + MUZZLE_OFFSET_Y;
+  const vx = Math.cos(radians) * speed * WORLD_TO_PERCENT_X * direction;
+  let vy = Math.sin(radians) * speed * WORLD_TO_HEIGHT_UNITS;
+  let elapsed = 0;
+
+  while (elapsed < MAX_SHOT_TIME) {
+    const prevX = x;
+    const prevY = y;
+
+    x += vx * SHOT_STEP_SECONDS;
+    y += vy * SHOT_STEP_SECONDS;
+    vy -= PHYSICS_GRAVITY * WORLD_TO_HEIGHT_UNITS * SHOT_STEP_SECONDS;
+    elapsed += SHOT_STEP_SECONDS;
+
+    const tankHitAlpha = getSegmentAabbHitAlpha(
+      prevX,
+      prevY,
+      x,
+      y,
+      tankBounds.minX,
+      tankBounds.maxX,
+      tankBounds.minY,
+      tankBounds.maxY
+    );
+    if (tankHitAlpha !== null) {
+      const impactX = prevX + (x - prevX) * tankHitAlpha;
+      return {
+        hitTank: true,
+        impactX: Math.max(0, Math.min(100, impactX)),
+        impactY: getTerrainHeightAtX(session.terrainHeights, impactX),
+        distanceToTarget: Math.abs(impactX - targetX),
+      };
+    }
+
+    if (x >= 0 && x <= 100) {
+      const prevTerrainDelta = prevY - getTerrainHeightAtX(session.terrainHeights, prevX);
+      const currentTerrainDelta = y - getTerrainHeightAtX(session.terrainHeights, x);
+      if (prevTerrainDelta > 0 && currentTerrainDelta <= 0) {
+        const alpha = prevTerrainDelta / (prevTerrainDelta - currentTerrainDelta);
+        const impactX = prevX + (x - prevX) * alpha;
+        return {
+          hitTank: false,
+          impactX: Math.max(0, Math.min(100, impactX)),
+          impactY: getTerrainHeightAtX(session.terrainHeights, impactX),
+          distanceToTarget: Math.abs(impactX - targetX),
+        };
+      }
+    }
+
+    if (x < -10 || x > 110 || y < -20) {
+      break;
+    }
+  }
+
+  const impactX = Math.max(0, Math.min(100, x));
+  return {
+    hitTank: false,
+    impactX,
+    impactY: getTerrainHeightAtX(session.terrainHeights, impactX),
+    distanceToTarget: Math.abs(impactX - targetX),
+  };
+}
+
 function calculateShot(session, attackerPlayerId, angle, power) {
   const { attackerX, targetX, targetKey, direction } = getTargetInfo(
     session,
     attackerPlayerId
   );
-  const radians = (angle * Math.PI) / 180;
-  const projectedDistance = (power / 100) * 80 * Math.sin(2 * radians);
-  const landingX = attackerX + projectedDistance * direction;
-  const distanceToTarget = Math.abs(landingX - targetX);
+  const shot = simulateShotPath(session, attackerX, targetX, direction, angle, power);
+  const distanceToTarget = shot.distanceToTarget;
 
   let result = 'miss';
   let damage = 0;
 
-  if (distanceToTarget <= 4) {
+  if (shot.hitTank) {
     result = 'direct_hit';
     damage = Math.max(30, Math.min(40, 40 - Math.round(distanceToTarget * 2)));
   } else if (distanceToTarget <= 10) {
@@ -301,13 +419,13 @@ function calculateShot(session, attackerPlayerId, angle, power) {
   session[targetKey] = Math.max(0, session[targetKey] - damage);
   session.lastShotResult = result;
   session.lastDamage = damage;
-  session.lastLandingX = Number(Math.max(0, Math.min(100, landingX)).toFixed(2));
+  session.lastLandingX = Number(shot.impactX.toFixed(2));
   session.lastAttackerPlayerId = attackerPlayerId;
   session.lastAngle = angle;
   session.lastPower = power;
 
-  const impactX = Number(Math.max(0, Math.min(100, landingX)).toFixed(2));
-  const impactY = getTerrainHeightAtX(session.terrainHeights, impactX);
+  const impactX = Number(shot.impactX.toFixed(2));
+  const impactY = Number(shot.impactY.toFixed(2));
   session.lastImpactX = impactX;
   session.lastImpactY = impactY;
   session.lastImpactRadius = TERRAIN_RADIUS;

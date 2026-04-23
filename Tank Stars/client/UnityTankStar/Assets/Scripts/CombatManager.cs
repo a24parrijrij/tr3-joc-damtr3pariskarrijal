@@ -21,7 +21,7 @@ public class CombatManager : MonoBehaviour
     public GameObject explosionPrefab;
     public Camera mainCamera;
 
-    // websocket url — hardcoded to localhost for now, only works on the same machine
+    // URL del WebSocket — apunta al servidor de joc
     private const string SocketUrl = "ws://65.108.158.166/game/";
 
     // Elements UXML
@@ -41,10 +41,14 @@ public class CombatManager : MonoBehaviour
 
     private GameObject backgroundObj;
 
-    // Timer
+    // Temporitzador de torn
     private float turnTimeLimit = 15f;
     private float _turnTimeRemaining = 0f;
     private bool _timerActive = false;
+
+    // Crater pendent del servidor (terrain_destroyed arriba abans de game_update)
+    private float pendingLandingWorldX;
+    private int[] pendingTerrainHeights;
 
     // WebSocket i estat del joc
     private WebSocket websocket;
@@ -60,11 +64,18 @@ public class CombatManager : MonoBehaviour
     private int currentTurnPlayerId;
     private bool uiBound;
     private Coroutine projectileRoutine, shakeRoutine;
-    private int[] pendingTerrainHeights;
-    private float pendingLandingWorldX;
+
+    private const float MultiplayerShotSpeedScale = 0.12f;
+    private const float MultiplayerPhysicsGravity = 9.81f;
+    // Match the server's horizontal shot scale so replayed bullets do not visually
+    // pass through tanks when the authoritative hit test says they missed.
+    private const float MultiplayerWorldToPercentX =
+        (80f * MultiplayerPhysicsGravity) / ((MultiplayerShotSpeedScale * 100f) * (MultiplayerShotSpeedScale * 100f));
+    private const float MultiplayerShotStepSeconds = 1f / 120f;
+    private const float MultiplayerMaxShotTime = 5f;
 
     // Propietats públiques (CombatInput les utilitza)
-    public TankController LocalTank => isPlayer1 ? player1Tank : player2Tank;
+    public TankController LocalTank  => isPlayer1 ? player1Tank : player2Tank;
     public TankController RemoteTank => isPlayer1 ? player2Tank : player1Tank;
 
     void Awake() => Instance = this;
@@ -90,10 +101,8 @@ public class CombatManager : MonoBehaviour
         if (turnTimerLabel != null)
         {
             turnTimerLabel.text = secs.ToString();
-            if (secs <= 5)
-                turnTimerLabel.AddToClassList("urgent");
-            else
-                turnTimerLabel.RemoveFromClassList("urgent");
+            if (secs <= 5) turnTimerLabel.AddToClassList("urgent");
+            else           turnTimerLabel.RemoveFromClassList("urgent");
         }
 
         if (_turnTimeRemaining <= 0f)
@@ -146,16 +155,15 @@ public class CombatManager : MonoBehaviour
         localPlayerNameLabel  = root.Q<Label>("local-player-name");
         enemyPlayerNameLabel  = root.Q<Label>("enemy-player-name");
         damagePopup           = root.Q<Label>("damage-popup");
-        turnTimerLabel       = root.Q<Label>("turn-timer-label");
+        turnTimerLabel        = root.Q<Label>("turn-timer-label");
 
         gameManager = GameManager.EnsureInstance();
 
-        // Valors inicials
-        if (angleSlider != null) angleSlider.value = 45f;
-        if (powerSlider != null) powerSlider.value = 75f;
-        if (turnBanner != null) turnBanner.AddToClassList("hidden");
+        if (angleSlider != null)  angleSlider.value  = 45f;
+        if (powerSlider != null)  powerSlider.value  = 75f;
+        if (turnBanner      != null) turnBanner.AddToClassList("hidden");
         if (gameOverOverlay != null) gameOverOverlay.AddToClassList("hidden");
-        if (damagePopup != null) damagePopup.AddToClassList("hidden");
+        if (damagePopup     != null) damagePopup.AddToClassList("hidden");
         if (connectionStatusLabel != null) connectionStatusLabel.text = "Connectant...";
         if (roomCodeLabel != null)
             roomCodeLabel.text = "Sala " + (string.IsNullOrEmpty(gameManager.roomCode) ? "------" : gameManager.roomCode);
@@ -176,26 +184,22 @@ public class CombatManager : MonoBehaviour
         SetFireEnabled(false);
         SetMoveEnabled(false);
 
-        // Fons de pantalla inicial
         SetupWorldBackground(gameManager.mapType ?? "desert");
 
-        // Amagar tancs fins que arribi game_start
         if (player1Tank != null) player1Tank.gameObject.SetActive(false);
         if (player2Tank != null) player2Tank.gameObject.SetActive(false);
 
-        // Registrar callbacks
-        if (angleSlider != null) angleSlider.RegisterValueChangedCallback(_ => UpdateSliderLabels());
-        if (powerSlider != null) powerSlider.RegisterValueChangedCallback(_ => UpdateSliderLabels());
-        if (fireButton != null) fireButton.clicked += OnFireClicked;
-        if (leaveButton != null) leaveButton.clicked += OnLeaveClicked;
-        if (moveLeftButton != null) moveLeftButton.clicked += OnMoveLeft;
+        if (angleSlider    != null) angleSlider.RegisterValueChangedCallback(_ => UpdateSliderLabels());
+        if (powerSlider    != null) powerSlider.RegisterValueChangedCallback(_ => UpdateSliderLabels());
+        if (fireButton     != null) fireButton.clicked     += OnFireClicked;
+        if (leaveButton    != null) leaveButton.clicked    += OnLeaveClicked;
+        if (moveLeftButton  != null) moveLeftButton.clicked  += OnMoveLeft;
         if (moveRightButton != null) moveRightButton.clicked += OnMoveRight;
         var goMenuBtn = root.Q<Button>("go-menu-btn");
         if (goMenuBtn != null) goMenuBtn.clicked += OnLeaveClicked;
 
         uiBound = true;
 
-        // Connectar al WebSocket
         if (gameManager.gameId > 0 && gameManager.playerId > 0)
             _ = ConnectWebSocket();
         else if (connectionStatusLabel != null)
@@ -251,8 +255,8 @@ public class CombatManager : MonoBehaviour
     {
         await SendJson(new JoinGameMessage
         {
-            type = "join_game",
-            gameId = gameManager.gameId,
+            type     = "join_game",
+            gameId   = gameManager.gameId,
             playerId = gameManager.playerId
         });
     }
@@ -299,7 +303,15 @@ public class CombatManager : MonoBehaviour
                 break;
 
             case "terrain_destroyed":
-                HandleTerrainDestroyed(msg);
+                // Store crater info — applied at the END of the bullet animation
+                // so the mesh isn't modified before the projectile reaches the ground.
+                // impactX from server is 0-100 percent, convert to world space.
+                if (terrain != null && terrain.width > 0)
+                {
+                    pendingLandingWorldX = (msg.impactX / 100f) * terrain.width - terrain.width / 2f;
+                    pendingTerrainHeights = msg.terrainHeights;
+                    Debug.Log($"[TERRAIN] terrain_destroyed queued: impactX%={msg.impactX} worldX={pendingLandingWorldX}");
+                }
                 break;
 
             case "positions_update":
@@ -336,12 +348,10 @@ public class CombatManager : MonoBehaviour
                 mapTypeLabel.text = char.ToUpper(activeMapType[0]) + activeMapType.Substring(1);
         }
 
-        // Actualitzar fons amb el mapa del servidor
         SetupWorldBackground(activeMapType);
 
         if (terrain != null)
         {
-            // Fit terrain width to the camera so it fills the screen edge-to-edge
             var cam = mainCamera != null ? mainCamera : Camera.main;
             if (cam != null)
             {
@@ -351,10 +361,9 @@ public class CombatManager : MonoBehaviour
                 if (player2Tank != null) player2Tank.worldBoundsX = halfW;
             }
 
-            // Use server terrain so both clients share identical ground
             if (msg.terrainHeights != null && msg.terrainHeights.Length > 0)
             {
-                Debug.Log($"[CombatManager] game_start: server terrain ({msg.terrainHeights.Length} cols), map={activeMapType}");
+                Debug.Log($"[CombatManager] game_start: terreny servidor ({msg.terrainHeights.Length} cols), map={activeMapType}");
                 terrain.LoadServerHeights(msg.terrainHeights, activeMapType);
             }
             else
@@ -365,7 +374,10 @@ public class CombatManager : MonoBehaviour
             }
         }
 
-        // Mostrar i col·locar tancs
+        // Reset any leftover crater from a previous game
+        pendingLandingWorldX = 0f;
+        pendingTerrainHeights = null;
+
         if (player1Tank != null) player1Tank.gameObject.SetActive(true);
         if (player2Tank != null) player2Tank.gameObject.SetActive(true);
         PlaceTanksFromPercent();
@@ -380,7 +392,6 @@ public class CombatManager : MonoBehaviour
 
         if (connectionStatusLabel != null) connectionStatusLabel.text = "En directe";
 
-        // Left (blue) = player1 name, Right (red) = player2 name
         string myName = string.IsNullOrEmpty(gameManager.username) ? "Tu" : gameManager.username;
         if (localPlayerNameLabel != null)
             localPlayerNameLabel.text = isPlayer1 ? myName : "Oponent";
@@ -391,14 +402,11 @@ public class CombatManager : MonoBehaviour
         ShowTurnBanner(myTurn ? "EL TEU TORN" : "TORN OPONENT");
 
         LocalTank?.StartTurn();
-
         SetFireEnabled(myTurn);
         SetMoveEnabled(myTurn);
 
-        if (myTurn)
-            StartTurnTimer();
-        else
-            StopTurnTimer();
+        if (myTurn) StartTurnTimer();
+        else        StopTurnTimer();
     }
 
     // ── game_update ────────────────────────────────────────────────────────
@@ -409,8 +417,6 @@ public class CombatManager : MonoBehaviour
         player2Id = msg.player2Id;
         isPlayer1 = gameManager.playerId == player1Id;
 
-        // Snapshot current tank positions BEFORE any server sync so the bullet
-        // animation always starts from where the tank visually was when it fired.
         Vector3 p1PosBefore = player1Tank != null ? player1Tank.transform.position : Vector3.zero;
         Vector3 p2PosBefore = player2Tank != null ? player2Tank.transform.position : Vector3.zero;
 
@@ -419,16 +425,8 @@ public class CombatManager : MonoBehaviour
         SyncRemoteTankPosition();
 
         UpdateHpFromMsg(msg);
+        ApplyPendingTerrain();
 
-        // Cache terrain heights — applied to the mesh after the bullet animation ends
-        if (msg.terrainHeights != null && msg.terrainHeights.Length > 0)
-        {
-            pendingTerrainHeights = msg.terrainHeights;
-            if (terrain != null)
-                pendingLandingWorldX = (msg.lastLandingX / 100f) * terrain.width - terrain.width / 2f;
-        }
-
-        // El servidor ha processat el tir anterior — resetejar shotInFlight
         shotInFlight = false;
 
         currentTurnPlayerId = msg.currentTurnPlayerId;
@@ -436,46 +434,47 @@ public class CombatManager : MonoBehaviour
 
         if (turnLabel != null) turnLabel.text = myTurn ? "El teu torn" : "Torn de l'oponent";
         ShowTurnBanner(myTurn ? "EL TEU TORN" : "TORN OPONENT");
-        
-        if (myTurn)
-            StartTurnTimer();
-        else
-            StopTurnTimer();
+
+        if (myTurn) StartTurnTimer();
+        else        StopTurnTimer();
 
         LocalTank?.StartTurn();
 
-        // Animar l'últim tir si n'hi ha
         if (!string.IsNullOrEmpty(msg.lastShotResult) && msg.lastAttackerPlayerId > 0)
         {
             bool isLocalAttacker = msg.lastAttackerPlayerId == gameManager.playerId;
+
+            Vector3 shooterFirePos   = (msg.lastAttackerPlayerId == player1Id) ? p1PosBefore : p2PosBefore;
+            Vector3 targetPreShotPos = (msg.lastAttackerPlayerId == player1Id) ? p2PosBefore : p1PosBefore;
+
             var shooter = isLocalAttacker ? LocalTank : RemoteTank;
-            var target = isLocalAttacker ? RemoteTank : LocalTank;
+            var target  = isLocalAttacker ? RemoteTank : LocalTank;
 
             if (shooter != null && target != null)
             {
-                // Use pre-sync position so animation starts from where the tank was when it fired
-                Vector3 shooterFirePos = isLocalAttacker ? p1PosBefore : p2PosBefore;
-                if (!isPlayer1) shooterFirePos = isLocalAttacker ? p2PosBefore : p1PosBefore;
-
-                // Target's pre-shot position — bullet stops here on a direct hit instead of passing through
-                Vector3 targetPreShotPos = isPlayer1
-                    ? (isLocalAttacker ? p2PosBefore : p1PosBefore)
-                    : (isLocalAttacker ? p1PosBefore : p2PosBefore);
-
                 bool facingRight = shooterFirePos.x < target.transform.position.x;
                 shooter.SetBarrelAngle(msg.lastAngle, facingRight);
-                AnimateProjectile(shooterFirePos, msg.lastLandingX, msg.lastAngle, msg.lastPower, facingRight,
-                                  msg.lastShotResult == "direct_hit", targetPreShotPos);
+
+                AnimateProjectile(
+                    shooterFirePos,
+                    msg.lastLandingX,
+                    msg.lastAngle,
+                    msg.lastPower,
+                    facingRight,
+                    msg.lastShotResult == "direct_hit",
+                    targetPreShotPos,
+                    target
+                );
             }
             else
             {
-                // No animation possible — apply terrain update now
+                // No animation possible — apply crater immediately
                 ApplyPendingTerrain();
             }
 
             if (combatLogLabel != null && msg.lastDamage > 0)
             {
-                string who = isLocalAttacker ? "Tu" : "Oponent";
+                string who      = isLocalAttacker ? "Tu" : "Oponent";
                 string resultat = msg.lastShotResult == "direct_hit" ? "impacte directe!"
                     : msg.lastShotResult == "near_hit" ? "gairebé!" : "aigua!";
                 combatLogLabel.text = $"{who}: {msg.lastAngle}°/{msg.lastPower}% {resultat} (-{msg.lastDamage} HP)";
@@ -514,37 +513,32 @@ public class CombatManager : MonoBehaviour
         ShowGameOver(won, msg.durationSeconds);
     }
 
-    // ── terrain_destroyed ──────────────────────────────────────────────────
-
-    private void HandleTerrainDestroyed(SocketMessage msg)
-    {
-        // Terrain crater is applied via DestroyTerrain (radius 0.5f, same as VS AI mode)
-        // at the end of the bullet animation — no action needed here.
-    }
-
     private void ApplyPendingTerrain()
     {
-        if (pendingTerrainHeights == null || terrain == null) return;
-        float worldY = terrain.GetHeightAtX(pendingLandingWorldX);
-        terrain.DestroyTerrain(new Vector2(pendingLandingWorldX, worldY), 0.5f);
+        if (terrain == null) return;
+
+        if (pendingTerrainHeights != null && pendingTerrainHeights.Length > 0)
+            terrain.LoadServerHeights(pendingTerrainHeights, activeMapType);
+
+        pendingLandingWorldX = 0f;
+        pendingTerrainHeights = null;
+
         player1Tank?.PlaceOnTerrain();
         player2Tank?.PlaceOnTerrain();
-        pendingTerrainHeights = null;
     }
 
     // ── HP ──────────────────────────────────────────────────────────────────
 
     private void UpdateHpFromMsg(SocketMessage msg)
     {
-        // Left bar (blue) always = player1, Right bar (red) always = player2
         SetHpBar(localHpFill, msg.player1Hp);
         SetHpBar(enemyHpFill, msg.player2Hp);
         if (localHpNum != null) localHpNum.text = msg.player1Hp.ToString();
         if (enemyHpNum != null) enemyHpNum.text = msg.player2Hp.ToString();
-        // Keep local/enemy semantics for game logic (game-over screen, tank HP)
+
         localHp = isPlayer1 ? msg.player1Hp : msg.player2Hp;
         enemyHp = isPlayer1 ? msg.player2Hp : msg.player1Hp;
-        if (LocalTank != null) LocalTank.currentHp = localHp;
+        if (LocalTank  != null) LocalTank.currentHp  = localHp;
         if (RemoteTank != null) RemoteTank.currentHp = enemyHp;
     }
 
@@ -554,7 +548,6 @@ public class CombatManager : MonoBehaviour
     {
         if (terrain == null) return;
 
-        // Convertir 0-100% a espai mundial. player1X sempre va a player1Tank.
         float p1World = (player1X / 100f) * terrain.width - terrain.width / 2f;
         float p2World = (player2X / 100f) * terrain.width - terrain.width / 2f;
 
@@ -570,23 +563,19 @@ public class CombatManager : MonoBehaviour
         }
     }
 
-    // Moves the remote (opponent) tank to its server-confirmed position.
-    // Uses CombatManager.terrain directly so it works even if TankController.terrain is unset.
-    // Never touches the local player's tank.
     private void SyncRemoteTankPosition()
     {
         if (terrain == null || terrain.width <= 0) return;
 
         float remoteXPercent = isPlayer1 ? player2X : player1X;
         float worldX = (remoteXPercent / 100f) * terrain.width - terrain.width / 2f;
-        float worldY = terrain.GetHeightAtX(worldX) + 0.35f;  // 0.35 = same offset as TankController.PlaceOnTerrain
+        float worldY = terrain.GetHeightAtX(worldX) + 0.35f;
 
         TankController remote = isPlayer1 ? player2Tank : player1Tank;
         if (remote == null) return;
 
         remote.transform.position = new Vector3(worldX, worldY, 0f);
 
-        // Zero physics velocity so the tank doesn't drift after being repositioned
         var rb = remote.GetComponent<Rigidbody2D>();
         if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
     }
@@ -613,15 +602,14 @@ public class CombatManager : MonoBehaviour
     {
         if (terrain == null || LocalTank == null) return;
         float xPercent = (LocalTank.transform.position.x + terrain.width / 2f) / terrain.width * 100f;
-        // Keep stored value in sync with actual visual position
         if (isPlayer1) player1X = xPercent;
         else           player2X = xPercent;
         _ = SendJson(new MoveTankMessage
         {
-            type = "move_tank",
-            gameId = gameManager.gameId,
+            type     = "move_tank",
+            gameId   = gameManager.gameId,
             playerId = gameManager.playerId,
-            newX = xPercent
+            newX     = xPercent
         });
     }
 
@@ -647,18 +635,15 @@ public class CombatManager : MonoBehaviour
         bool facingRight = LocalTank.transform.position.x < RemoteTank.transform.position.x;
         LocalTank.SetBarrelAngle(angle, facingRight);
 
-        // we don't animate locally — both clients animate from the server's game_update
-        // this way both screens always show the exact same landing position
         _ = SendJson(new FireShotMessage
         {
-            type = "fire_shot",
-            gameId = gameManager.gameId,
+            type     = "fire_shot",
+            gameId   = gameManager.gameId,
             playerId = gameManager.playerId,
-            angle = Mathf.RoundToInt(angle),
-            power = Mathf.RoundToInt(power)
+            angle    = Mathf.RoundToInt(angle),
+            power    = Mathf.RoundToInt(power)
         });
 
-        // small barrel recoil after firing — shifts angle slider for next turn
         if (angleSlider != null)
             angleSlider.value = Mathf.Clamp(angle + UnityEngine.Random.Range(-10f, 10f), 0f, 90f);
     }
@@ -672,43 +657,46 @@ public class CombatManager : MonoBehaviour
     private void UnbindButtons()
     {
         if (!uiBound || root == null) return;
-        if (fireButton != null) fireButton.clicked -= OnFireClicked;
-        if (leaveButton != null) leaveButton.clicked -= OnLeaveClicked;
-        if (moveLeftButton != null) moveLeftButton.clicked -= OnMoveLeft;
+        if (fireButton      != null) fireButton.clicked      -= OnFireClicked;
+        if (leaveButton     != null) leaveButton.clicked     -= OnLeaveClicked;
+        if (moveLeftButton  != null) moveLeftButton.clicked  -= OnMoveLeft;
         if (moveRightButton != null) moveRightButton.clicked -= OnMoveRight;
         var goMenuBtn = root.Q<Button>("go-menu-btn");
         if (goMenuBtn != null) goMenuBtn.clicked -= OnLeaveClicked;
     }
 
-    // ── Animació del projectil (purament visual, sense físiques) ───────────
+    // ── Animació del projectil ─────────────────────────────────────────────
 
-    private void AnimateProjectile(Vector3 startPos, float landingXPercent, float angle, float power, bool facingRight,
-                                    bool isDirect = false, Vector3 directHitTargetPos = default)
+    private void AnimateProjectile(
+        Vector3 startPos,
+        float landingXPercent,
+        float angle,
+        float power,
+        bool facingRight,
+        bool isDirect = false,
+        Vector3 directHitTargetPos = default,
+        TankController target = null)
     {
         if (projectilePrefab == null || terrain == null) return;
 
         float landingWorldX = (landingXPercent / 100f) * terrain.width - terrain.width / 2f;
-        // Always store terrain landing X so DestroyTerrain uses the correct spot
         pendingLandingWorldX = landingWorldX;
 
-        // On a direct hit the bullet stops at the tank; otherwise it lands on terrain
         Vector3 endPos = isDirect
             ? new Vector3(directHitTargetPos.x, directHitTargetPos.y, 0f)
             : new Vector3(landingWorldX, terrain.GetHeightAtX(landingWorldX), 0f);
 
-        // Snapshot terrain heights now — pendingTerrainHeights will be cleared by the coroutine
         var heights = pendingTerrainHeights;
         pendingTerrainHeights = null;
 
         StopTracked(ref projectileRoutine);
-        projectileRoutine = StartCoroutine(AnimateProjectileArc(startPos, endPos, heights));
+        projectileRoutine = StartCoroutine(AnimateProjectileArc(startPos, endPos, heights, isDirect ? target.transform : null));
     }
 
-    private IEnumerator AnimateProjectileArc(Vector3 start, Vector3 end, int[] newTerrainHeights)
+    private IEnumerator AnimateProjectileArc(Vector3 start, Vector3 end, int[] newTerrainHeights, Transform target = null)
     {
         var proj = Instantiate(projectilePrefab, start, Quaternion.identity);
 
-        // Disable physics — this is a purely visual projectile driven by position lerp.
         var rb = proj.GetComponent<Rigidbody2D>();
         if (rb != null) rb.simulated = false;
 
@@ -718,8 +706,6 @@ public class CombatManager : MonoBehaviour
         var pc = proj.GetComponent<ProjectileController>();
         if (pc != null) pc.enabled = false;
 
-        // Dynamic arc height: sample terrain along the path and ensure the bullet
-        // visually clears any peaks between shooter and landing spot.
         float arcHeight = 3f;
         if (terrain != null)
         {
@@ -729,7 +715,7 @@ public class CombatManager : MonoBehaviour
                 float tx = s / 9f;
                 float sx = Mathf.Lerp(start.x, end.x, tx);
                 float terrainPeakY = terrain.GetHeightAtX(sx);
-                float needed = terrainPeakY - midBaseY + 2f; // 2 units of clearance
+                float needed = terrainPeakY - midBaseY + 2f;
                 if (needed > arcHeight) arcHeight = needed;
             }
             arcHeight = Mathf.Clamp(arcHeight, 3f, 12f);
@@ -738,12 +724,16 @@ public class CombatManager : MonoBehaviour
         float duration = 1.2f;
         float elapsed = 0f;
 
+        // Check if this is a direct hit - bullet should stop at tank position
+        bool isDirectHit = target != null;
+        Vector3 targetPosition = isDirectHit ? target.transform.position : end;
+
         while (elapsed < duration && proj != null)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            float x = Mathf.Lerp(start.x, end.x, t);
-            float y = Mathf.Lerp(start.y, end.y, t) + arcHeight * Mathf.Sin(Mathf.PI * t);
+            float x = Mathf.Lerp(start.x, targetPosition.x, t);
+            float y = Mathf.Lerp(start.y, targetPosition.y, t) + arcHeight * Mathf.Sin(Mathf.PI * t);
             proj.transform.position = new Vector3(x, y, 0);
             yield return null;
         }
@@ -752,7 +742,8 @@ public class CombatManager : MonoBehaviour
         {
             if (explosionPrefab != null)
             {
-                var exp = Instantiate(explosionPrefab, end, Quaternion.identity);
+                var expPos = proj.transform.position;
+                var exp = Instantiate(explosionPrefab, expPos, Quaternion.identity);
                 Destroy(exp, 1.5f);
             }
             CameraShake();
@@ -760,12 +751,11 @@ public class CombatManager : MonoBehaviour
         }
 
         // Apply terrain destruction matching VS AI mode (radius 0.5 world units, cosine falloff).
-        // Use pendingLandingWorldX so the crater is always at the server's impact point,
-        // even when the bullet stopped early at a tank (direct hit).
         if (terrain != null)
         {
-            float craterY = terrain.GetHeightAtX(pendingLandingWorldX);
-            terrain.DestroyTerrain(new Vector2(pendingLandingWorldX, craterY), 0.5f);
+            float finalX = isDirectHit ? target.transform.position.x : pendingLandingWorldX;
+            float craterY = terrain.GetHeightAtX(finalX);
+            terrain.DestroyTerrain(new Vector2(finalX, craterY), 0.5f);
             player1Tank?.PlaceOnTerrain();
             player2Tank?.PlaceOnTerrain();
         }
@@ -777,7 +767,7 @@ public class CombatManager : MonoBehaviour
     {
         if (damagePopup == null) return;
         damagePopup.text = "-" + damage;
-        damagePopup.style.left = Length.Percent(Mathf.Clamp(xPercent, 10f, 90f));
+        damagePopup.style.left   = Length.Percent(Mathf.Clamp(xPercent, 10f, 90f));
         damagePopup.style.bottom = Length.Percent(35f);
         damagePopup.style.opacity = 1f;
         damagePopup.RemoveFromClassList("hidden");
@@ -835,14 +825,14 @@ public class CombatManager : MonoBehaviour
 
     private void SetMoveEnabled(bool on)
     {
-        if (moveLeftButton != null) moveLeftButton.SetEnabled(on);
+        if (moveLeftButton  != null) moveLeftButton.SetEnabled(on);
         if (moveRightButton != null) moveRightButton.SetEnabled(on);
     }
 
     private void StartTurnTimer()
     {
         _turnTimeRemaining = turnTimeLimit;
-        _timerActive = true;
+        _timerActive       = true;
         if (turnTimerLabel != null)
         {
             turnTimerLabel.text = Mathf.CeilToInt(turnTimeLimit).ToString();
@@ -885,9 +875,9 @@ public class CombatManager : MonoBehaviour
         }
         if (gameOverSubtitle != null)
             gameOverSubtitle.text = won ? "Has destruït el tanc enemic!" : "El teu tanc ha estat destruït...";
-        if (goLocalHp != null) goLocalHp.text = localHp.ToString();
-        if (goEnemyHp != null) goEnemyHp.text = enemyHp.ToString();
-        if (goDuration != null) goDuration.text = duration + "s";
+        if (goLocalHp  != null) goLocalHp.text  = localHp.ToString();
+        if (goEnemyHp  != null) goEnemyHp.text  = enemyHp.ToString();
+        if (goDuration != null) goDuration.text  = duration + "s";
 
         StartCoroutine(ShowGameOverDelay(1.5f));
     }
@@ -898,7 +888,7 @@ public class CombatManager : MonoBehaviour
         if (gameOverOverlay != null) gameOverOverlay.RemoveFromClassList("hidden");
     }
 
-    // ── Fons de pantalla ─────────────────────────────────────────────────
+    // ── Fons de pantalla ──────────────────────────────────────────────────
 
     private void SetupWorldBackground(string mapType)
     {
@@ -911,7 +901,7 @@ public class CombatManager : MonoBehaviour
             backgroundObj.AddComponent<SpriteRenderer>();
         }
 
-        var sr = backgroundObj.GetComponent<SpriteRenderer>();
+        var sr    = backgroundObj.GetComponent<SpriteRenderer>();
         sr.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100);
         sr.sortingOrder = -100;
 
@@ -920,21 +910,22 @@ public class CombatManager : MonoBehaviour
         {
             float camH = cam.orthographicSize * 2f;
             float camW = camH * cam.aspect;
-            float sprW = tex.width / 100f;
+            float sprW = tex.width  / 100f;
             float sprH = tex.height / 100f;
             float scale = Mathf.Max(camW / sprW, camH / sprH);
             backgroundObj.transform.localScale = new Vector3(scale, scale, 1);
-            backgroundObj.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 10);
+            backgroundObj.transform.position   = new Vector3(
+                cam.transform.position.x, cam.transform.position.y, 10);
         }
     }
 
     // ── Utilitats ──────────────────────────────────────────────────────────
 
-    public bool IsMyTurn() => gameManager != null && gameStarted && !gameFinished
-                              && currentTurnPlayerId == gameManager.playerId;
+    public bool IsMyTurn()      => gameManager != null && gameStarted && !gameFinished
+                                   && currentTurnPlayerId == gameManager.playerId;
     public bool IsCurrentTurn() => IsMyTurn();
-    public bool CanFire() => IsMyTurn() && !shotInFlight;
-    public bool CanMove() => IsMyTurn() && !shotInFlight;
+    public bool CanFire()       => IsMyTurn() && !shotInFlight;
+    public bool CanMove()       => IsMyTurn() && !shotInFlight;
 
     private string NormalizeMap(string m)
     {
@@ -949,42 +940,73 @@ public class CombatManager : MonoBehaviour
     {
         if (c != null) { StopCoroutine(c); c = null; }
     }
+
+    private float WorldXToPercent(float worldX)
+    {
+        if (terrain == null || terrain.width <= 0f) return 0f;
+        return (worldX + terrain.width / 2f) / terrain.width * 100f;
+    }
+
+    private float PercentToWorldX(float xPercent)
+    {
+        if (terrain == null) return 0f;
+        return (xPercent / 100f) * terrain.width - terrain.width / 2f;
+    }
+
+    private float WorldYToHeightUnits(float worldY)
+    {
+        if (terrain == null || Mathf.Abs(terrain.maxHeight) < 0.0001f) return 0f;
+        float localY = worldY - terrain.transform.position.y;
+        return ((localY - terrain.baseHeight) / terrain.maxHeight) * 100f;
+    }
+
+    private float HeightUnitsToWorldY(float heightUnits)
+    {
+        if (terrain == null) return 0f;
+        float localY = terrain.baseHeight + (heightUnits / 100f) * terrain.maxHeight;
+        return terrain.transform.position.y + localY;
+    }
+
+    private bool HasReachedImpact(float currentXPercent, float impactXPercent, bool facingRight)
+    {
+        return facingRight ? currentXPercent >= impactXPercent : currentXPercent <= impactXPercent;
+    }
 }
 
-// Missatges WebSocket
-[Serializable] public class JoinGameMessage { public string type; public int gameId; public int playerId; }
-[Serializable] public class FireShotMessage { public string type; public int gameId; public int playerId; public int angle; public int power; }
-[Serializable] public class MoveTankMessage { public string type; public int gameId; public int playerId; public float newX; }
+// ── Missatges WebSocket ────────────────────────────────────────────────────
+[Serializable] public class JoinGameMessage  { public string type; public int gameId; public int playerId; }
+[Serializable] public class FireShotMessage  { public string type; public int gameId; public int playerId; public int angle; public int power; }
+[Serializable] public class MoveTankMessage  { public string type; public int gameId; public int playerId; public float newX; }
 
 [Serializable]
 public class SocketMessage
 {
     public string type;
     public string message;
-    public int gameId;
+    public int    gameId;
     public string roomCode;
     public string mapType;
-    public int player1Id;
-    public int player2Id;
-    public int player1Hp;
-    public int player2Hp;
-    public float player1X;
-    public float player2X;
-    public int currentTurnPlayerId;
-    public int winnerPlayerId;
+    public int    player1Id;
+    public int    player2Id;
+    public int    player1Hp;
+    public int    player2Hp;
+    public float  player1X;
+    public float  player2X;
+    public int    currentTurnPlayerId;
+    public int    winnerPlayerId;
     public string status;
     public string lastShotResult;
-    public int lastDamage;
-    public float lastLandingX;
-    public int lastAttackerPlayerId;
-    public int lastAngle;
-    public int lastPower;
-    public float lastImpactX;
-    public float lastImpactY;
-    public float impactX;
-    public float impactY;
-    public float radius;
-    public int durationSeconds;
-    public int[] terrainHeights;
-    public int terrainEventId;
+    public int    lastDamage;
+    public float  lastLandingX;
+    public int    lastAttackerPlayerId;
+    public int    lastAngle;
+    public int    lastPower;
+    public float  lastImpactX;
+    public float  lastImpactY;
+    public float  impactX;
+    public float  impactY;
+    public float  radius;
+    public int    durationSeconds;
+    public int[]  terrainHeights;
+    public int    terrainEventId;
 }
